@@ -32,15 +32,30 @@ def bulid_prompt(query:str, contexts: list[str]) -> str:
 
 # 回答：
 
+def convert_history_to_openai_format(history):
+    converted = []
+    for msg in history:
+        if msg.type == "human":
+            converted.append({"role" : "user", "content" : msg.content})
+        elif msg.type == "ai":
+            converted.append({"role" : "assistant", "content" : msg.content})
+    return converted
 
-def generate_answer(query: str, contexts: list[str], model = "gpt-3.5-turbo") -> str:
+def generate_answer(query: str, contexts: list[str], history: list = [], model = "gpt-3.5-turbo") -> str:
+    context_text = "\n---\n".join(contexts)
+
+    messages = [
+        {"role" : "system", "content" : "你是個嚴謹的學習助理，請根據提供的資料與對話內容作答。嚴禁編造。"}
+    ]
+
+    # 加入歷史對話
+    messages += convert_history_to_openai_format(history)
     prompt = bulid_prompt(query, contexts)
+    messages.append({"role" : "user", "content" : prompt})
+
     response = client.chat.completions.create(
         model = model,
-        messages = [
-            {"role" : "system", "content" : "你是個嚴謹的學習助理。請根據提供的內容來作答，禁止編造。"},
-            {"role" : "user", "content" : prompt}
-        ],
+        messages = messages,
         temperature = 0.3 # 回答的創意程度，卻低越穩定，越高越創意
     )
     return response.choices[0].message.content

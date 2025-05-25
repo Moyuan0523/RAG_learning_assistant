@@ -22,13 +22,17 @@
     <h4>💬 回答：</h4>
     <div class="alert alert-success">{{ answer }}</div>
 
-    <h5>🔍 引用段落：</h5>
+    <h5>📎 引用段落（附來源編號）：</h5>
     <ol>
-        {% for chunk in top_chunks %}
-        <li><pre style="white-space: pre-wrap">{{ chunk }}</pre></li>
+        {% for idx, chunk in retrieved_chunks %}
+        <li>
+            <strong>段落 {{ idx }}</strong>
+            <pre style="white-space: pre-wrap">{{ chunk }}</pre>
+        </li>
         {% endfor %}
     </ol>
     {% endif %}
 </div>
 </body>
 </html>
+

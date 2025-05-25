@@ -47,9 +47,16 @@ def build_faiss_index(chunks: List[str]):
     return index, embeddings
 
 # 語意查詢模組
-def search_similar_chunks(query: str, index, chunks, top_k: int = 3) -> List[str]:
+def search_similar_chunks(query: str, index, chunks, top_k: int = 3, return_indices = False) -> List[str]:
     query_vector = get_embedding(query)
     # D = 每個查詢向量與資料庫中前 top_k 向量的距離 （越小越相似）
     # I = 最相似的向量的索引位置，用來找到對應的 chunk，儲存 top_k 個向量
     D, I = index.search(np.array([query_vector]).astype("float32"), top_k) # FAISS 只接受 2D array, float32 格式
-    return [chunks[i] for i in I[0]]
+
+    if return_indices:
+        return{
+            "indices": I[0].tolist(),
+            "chunks": [chunks[i] for i in I[0]] 
+        }
+    else:
+        return [chunks[i] for i in I[0]]
