@@ -50,9 +50,12 @@ def generate_answer(query: str, contexts: list[str], history: list = [], model =
 
     # 加入歷史對話
     messages += convert_history_to_openai_format(history)
+    # 組合 prompt
     prompt = bulid_prompt(query, contexts)
+    # 將這次的 prompt 加入 user 歷史回答中
     messages.append({"role" : "user", "content" : prompt})
 
+    # 呼叫 OpenAI 的 Chat Completions API
     response = client.chat.completions.create(
         model = model,
         messages = messages,

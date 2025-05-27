@@ -1,3 +1,4 @@
+# 舊的chunk生成器，他將課本切成個chunk後，放入FAISS本地向量資料庫
 import os
 import pickle
 import faiss
