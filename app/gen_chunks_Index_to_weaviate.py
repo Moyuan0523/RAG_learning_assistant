@@ -4,7 +4,7 @@ import pickle
 import uuid
 from dotenv import load_dotenv
 from openai import OpenAI
-from retriever import load_pdf, split_text, get_embedding
+from app.retriever_original import load_pdf, split_text, get_embedding
 import weaviate
 
 # 讀取環境變數
@@ -14,7 +14,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # 連接 Weaviate v3 遠端資料庫
 weaviate_client = weaviate.Client("http://140.116.82.104:8080")
 
-# chunks 與教材的儲存位置
+# chunks 與教材的儲存位置，多存一個本地保險
 pdf_path = "Sources/Introduction to Data Mining-Pearson Education Limited (2019)-Pang-Ning Tan.pdf"
 filename = os.path.basename(pdf_path)
 source_name = filename.replace(".pdf", "")

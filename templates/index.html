@@ -2,37 +2,89 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>RAG 學習助理</title>
+    <title>RAG Learning Assistant</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .chat-bubble {
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+        }
+        .user-msg {
+            background-color: #d1e7dd;
+            align-self: flex-end;
+            text-align: right;
+        }
+        .ai-msg {
+            background-color: #f8d7da;
+            align-self: flex-start;
+            text-align: left;
+        }
+        .chat-box {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
 </head>
 <body class="bg-light">
 <div class="container mt-5">
-    <h1 class="mb-4">📘 RAG 學習助理</h1>
+    <h1 class="mb-4">🤖 RAG 聊天助理</h1>
 
-    <form method="POST">
+    <form method="POST" onkeydown="if(event.key === 'Enter') this.submit();">
         <div class="mb-3">
-            <label for="query" class="form-label">請輸入你的問題：</label>
-            <input type="text" class="form-control" id="query" name="query" value="{{ query }}" required>
+            <label for="query" class="form-label">💬 請輸入你的問題：</label>
+            <input type="text" class="form-control" id="query" name="query" value="{{ query }}" required autofocus onkeydown="handleKey(event)">
         </div>
-        <button type="submit" class="btn btn-primary">送出問題</button>
+        <button type="submit" class="btn btn-primary">送出</button>
     </form>
 
-    {% if answer %}
     <hr>
-    <h4>💬 回答：</h4>
-    <div class="alert alert-success">{{ answer }}</div>
+    <div class="chat-box">
+        {% for msg in memory %}
+            {% if msg.type == "human" %}
+                <div class="chat-bubble user-msg ms-auto">
+                    {{ msg.content }}
+                </div>
+            {% elif msg.type == "ai" %}
+                <div class="chat-bubble ai-msg me-auto">
+                    {{ msg.content }}
+                </div>
 
-    <h5>📎 引用段落（附來源編號）：</h5>
-    <ol>
-        {% for idx, chunk in retrieved_chunks %}
-        <li>
-            <strong>段落 {{ idx }}</strong>
-            <pre style="white-space: pre-wrap">{{ chunk }}</pre>
-        </li>
+                {% if msg.sources is not none and msg.sources|length > 0 %}
+                <div class="me-auto mb-3">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false">
+                        🔎 展開引用段落
+                    </button>
+                    <div class="collapse mt-2" id="collapse{{ loop.index }}">
+                        <ol>
+                            {% for chunk in msg.sources %}
+                            <li class="mb-2">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <p><strong>📄 來源：</strong> {{ chunk.source }}</p>
+                                        <p style="white-space: pre-wrap">{{ chunk.text }}</p>
+                                    </div>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ol>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
         {% endfor %}
-    </ol>
-    {% endif %}
+    </div>
 </div>
+
+<script>
+function handleKey(event) {
+    if (event.key === "Enter") {
+        event.preventDefault(); // 阻止預設的 Enter 行為（例如換行）
+        document.getElementById("chat-form").submit(); // 手動觸發送出
+    }
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-

@@ -2,7 +2,7 @@
 import os
 import pickle
 import faiss
-from retriever import load_pdf, split_text, build_faiss_index
+from app.retriever_original import load_pdf, split_text, build_faiss_index
 
 pdf_path = "Sources/Introduction to Data Mining-Pearson Education Limited (2019)-Pang-Ning Tan.pdf"
 chunks_path = "chunks/data_mining.pkl"

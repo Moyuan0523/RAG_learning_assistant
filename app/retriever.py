@@ -3,9 +3,13 @@ import fitz  # PyMuPDF的一部分，為讀取、編輯與分析PDF2的套件
 import faiss
 import openai
 import numpy as np
+import weaviate 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 from typing import List
+
+# 連接 weaviate v3 資料庫
+weaviate_client = weaviate.Client("http://140.116.82.104:8080")
 
 # 初始化遷入模型（免費、本地）
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -47,16 +51,19 @@ def build_faiss_index(chunks: List[str]):
     return index, embeddings
 
 # 語意查詢模組
-def search_similar_chunks(query: str, index, chunks, top_k: int = 3, return_indices = False) -> List[str]:
-    query_vector = get_embedding(query)
-    # D = 每個查詢向量與資料庫中前 top_k 向量的距離 （越小越相似）
-    # I = 最相似的向量的索引位置，用來找到對應的 chunk，儲存 top_k 個向量
-    D, I = index.search(np.array([query_vector]).astype("float32"), top_k) # FAISS 只接受 2D array, float32 格式
-
-    if return_indices:
-        return{
-            "indices": I[0].tolist(),
-            "chunks": [chunks[i] for i in I[0]] 
+def search_similar_chunks(query: str, top_k: int = 3) -> List[str]:
+    query_vector = get_embedding(query) # 取得 query 的向量
+    
+    # 從 class Paragraph 得到兩個欄位
+    results = weaviate_client.query.get("Paragraph", ["text", "source"]) \
+        .with_near_vector({"vector" : query_vector}) \
+        .with_limit(top_k) \
+        .do()
+    
+    return[
+        {
+            "text" : item["text"],
+            "source" : item.get("source", "N/A")
         }
-    else:
-        return [chunks[i] for i in I[0]]
+        for item in results["data"]["Get"]["Paragraph"]
+    ]
