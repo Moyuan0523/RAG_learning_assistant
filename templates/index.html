@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>RAG Learning Assistant</title>
+    <title>RAG 聊天室助理</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .chat-bubble {
@@ -24,39 +24,32 @@
         .chat-box {
             display: flex;
             flex-direction: column;
+            height: 70vh;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 10px;
+            background: white;
         }
     </style>
 </head>
 <body class="bg-light">
 <div class="container mt-5">
-    <h1 class="mb-4">🤖 RAG 聊天助理</h1>
+    <h1 class="mb-4">🤖 RAG Learning Assisant</h1>
 
-    <form method="POST" onkeydown="if(event.key === 'Enter') this.submit();">
-        <div class="mb-3">
-            <label for="query" class="form-label">💬 請輸入你的問題：</label>
-            <input type="text" class="form-control" id="query" name="query" value="{{ query }}" required autofocus onkeydown="handleKey(event)">
-        </div>
-        <button type="submit" class="btn btn-primary">送出</button>
-    </form>
-
-    <hr>
-    <div class="chat-box">
+    <div class="chat-box mb-4" id="chat-box">
         {% for msg in memory %}
-            {% if msg.type == "human" %}
-                <div class="chat-bubble user-msg ms-auto">
-                    {{ msg.content }}
-                </div>
-            {% elif msg.type == "ai" %}
-                <div class="chat-bubble ai-msg me-auto">
-                    {{ msg.content }}
-                </div>
+            {% if msg.role == "user" %}
+                <div class="chat-bubble user-msg ms-auto">{{ msg.content }}</div>
+            {% elif msg.role == "assistant" %}
+                <div class="chat-bubble ai-msg me-auto">{{ msg.content }}</div>
 
-                {% if msg.sources is not none and msg.sources|length > 0 %}
+                {% if msg.sources is defined and msg.sources %}
                 <div class="me-auto mb-3">
-                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-init-{{ loop.index }}">
                         🔎 展開引用段落
                     </button>
-                    <div class="collapse mt-2" id="collapse{{ loop.index }}">
+                    <div class="collapse mt-2" id="collapse-init-{{ loop.index }}">
                         <ol>
                             {% for chunk in msg.sources %}
                             <li class="mb-2">
@@ -75,15 +68,101 @@
             {% endif %}
         {% endfor %}
     </div>
+
+
+
+    <div class="d-flex justify-content-end mb-2">
+        <button id="reset-btn" class="btn btn-outline-danger btn-sm">清除記憶</button>
+    </div>
+
+
+    <form id="chat-form">
+        <div class="input-group">
+            <input type="text" class="form-control" id="query" placeholder="輸入你的問題..." required autofocus>
+            <button type="submit" class="btn btn-primary">送出</button>
+        </div>
+    </form>
 </div>
 
 <script>
-function handleKey(event) {
-    if (event.key === "Enter") {
-        event.preventDefault(); // 阻止預設的 Enter 行為（例如換行）
-        document.getElementById("chat-form").submit(); // 手動觸發送出
+document.getElementById("chat-form").addEventListener("submit", async function(event) {
+    event.preventDefault();
+    const input = document.getElementById("query");
+    const message = input.value.trim();
+    if (!message) return;
+
+    const chatBox = document.getElementById("chat-box");
+
+    // 使用者訊息
+    const userBubble = document.createElement("div");
+    userBubble.className = "chat-bubble user-msg ms-auto";
+    userBubble.textContent = message;
+    chatBox.appendChild(userBubble);
+
+    input.value = "";
+
+    const response = await fetch("/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ query: message })
+    });
+    const data = await response.json();
+
+    // AI 訊息
+    const aiBubble = document.createElement("div");
+    aiBubble.className = "chat-bubble ai-msg me-auto";
+    aiBubble.innerHTML = data.answer;
+    chatBox.appendChild(aiBubble);
+
+    // 引用段落（若有）
+    if (data.sources && data.sources.length > 0) {
+        const sourceWrapper = document.createElement("div");
+        sourceWrapper.className = "me-auto mb-3";
+
+        const btn = document.createElement("button");
+        btn.className = "btn btn-sm btn-outline-secondary";
+        btn.type = "button";
+        const collapseId = `collapse${Date.now()}`;
+        btn.setAttribute("data-bs-toggle", "collapse");
+        btn.setAttribute("data-bs-target", `#${collapseId}`);
+        btn.textContent = "🔎 展開引用段落";
+
+        const collapseDiv = document.createElement("div");
+        collapseDiv.className = "collapse mt-2";
+        collapseDiv.id = collapseId;
+
+        const list = document.createElement("ol");
+        for (const chunk of data.sources) {
+            const li = document.createElement("li");
+            li.className = "mb-2";
+            li.innerHTML = `
+                <div class="card">
+                    <div class="card-body">
+                        <p><strong>📄 來源：</strong> ${chunk.source}</p>
+                        <p style="white-space: pre-wrap">${chunk.text}</p>
+                    </div>
+                </div>
+            `;
+            list.appendChild(li);
+        }
+
+        collapseDiv.appendChild(list);
+        sourceWrapper.appendChild(btn);
+        sourceWrapper.appendChild(collapseDiv);
+        chatBox.appendChild(sourceWrapper);
     }
-}
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+});
+// 清除 Memory
+document.getElementById("reset-btn").addEventListener("click", async function () {
+    if (!confirm("確定要清除記憶嗎？")) return;
+
+    await fetch("/reset", { method: "POST" });
+
+    const chatBox = document.getElementById("chat-box");
+    chatBox.innerHTML = "";  // 清空聊天室畫面
+});
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

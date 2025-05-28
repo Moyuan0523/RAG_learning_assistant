@@ -6,16 +6,15 @@ load_dotenv()
 client = OpenAI()
 
 # 組合出送進 GPT 的 Prompt (User's question + relative chunks)
-def bulid_prompt(query:str, contexts: list[str]) -> str:
-    context_text = "\n___\n".join(contexts)
-    return f"""根據以下資料之內容回答問題。若無明確資料，誠實說不知道，不可編造或猜測。
-    資料內容：
-    {context_text}
+def build_prompt(query: str, contexts: list[str]) -> str:
+    context_text = "\n---\n".join(contexts)
+    return f"""以下是與問題有關的資料段落：
 
-    問題：
-    {query}
+{context_text}
 
-    回答：
+請根據上述內容回答下列問題。若無明確資料，請誠實回答「不知道」：
+
+{query}
 """
 
 # 根據以下資料內容回答問題。若無明確資訊，請誠實說不知道，不要編造。
@@ -33,25 +32,23 @@ def bulid_prompt(query:str, contexts: list[str]) -> str:
 # 回答：
 
 def convert_history_to_openai_format(history):
-    converted = []
+    messages = []
     for msg in history:
-        if msg.type == "human":
-            converted.append({"role" : "user", "content" : msg.content})
-        elif msg.type == "ai":
-            converted.append({"role" : "assistant", "content" : msg.content})
-    return converted
+        if msg["role"] == "user":
+            messages.append({"role": "user", "content": msg["content"]})
+        elif msg["role"] == "assistant":
+            messages.append({"role": "assistant", "content": msg["content"]})
+    return messages
 
 def generate_answer(query: str, contexts: list[str], history: list = [], model = "gpt-3.5-turbo") -> str:
-    context_text = "\n---\n".join(contexts)
-
     messages = [
         {"role" : "system", "content" : "你是個嚴謹的學習助理，請根據提供的資料與對話內容作答。嚴禁編造。"}
     ]
 
-    # 加入歷史對話
+    # 加入歷史對話，轉換成 GPT 接受的格式
     messages += convert_history_to_openai_format(history)
     # 組合 prompt
-    prompt = bulid_prompt(query, contexts)
+    prompt = build_prompt(query, contexts)
     # 將這次的 prompt 加入 user 歷史回答中
     messages.append({"role" : "user", "content" : prompt})
 
@@ -61,4 +58,4 @@ def generate_answer(query: str, contexts: list[str], history: list = [], model =
         messages = messages,
         temperature = 0.3 # 回答的創意程度，卻低越穩定，越高越創意
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content.strip()
