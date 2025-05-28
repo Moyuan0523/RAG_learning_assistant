@@ -40,7 +40,7 @@ def chat():
     for m in memory.get_history():
         print(f"{m['role']}: {m['content']}")
 
-    retrieved_chunks = search_similar_chunks(query, top_k=4) # 引用段落
+    retrieved_chunks = search_similar_chunks(query, top_k=10) # 引用段落
     top_chunks = [chunk["text"] for chunk in retrieved_chunks]
     answer = generate_answer(query, top_chunks, history=memory.get_history())
     memory.add_ai_message(answer, sources=retrieved_chunks)

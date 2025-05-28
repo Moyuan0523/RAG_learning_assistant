@@ -10,3 +10,5 @@ RAG Learning Assistant 是一個基於 Retrieval-Augmented Generation 技術的�
 ```bash
 conda env create -f environment.yml
 ```
+
+## 使用方式

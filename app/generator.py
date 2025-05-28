@@ -12,7 +12,8 @@ def build_prompt(query: str, contexts: list[str]) -> str:
 
 {context_text}
 
-請根據上述內容回答下列問題。若無明確資料，請誠實回答「不知道」：
+請根據上述資料段落、以及與使用者的對話內容，詳細回答以下問題。
+若段落中沒有提及的資訊，也可根據常識與已知對話內容進行合理說明。請勿胡亂猜測。
 
 {query}
 """
@@ -56,6 +57,7 @@ def generate_answer(query: str, contexts: list[str], history: list = [], model =
     response = client.chat.completions.create(
         model = model,
         messages = messages,
-        temperature = 0.3 # 回答的創意程度，卻低越穩定，越高越創意
+        temperature = 0.3, # 回答的創意程度，卻低越穩定，越高越創意
+        max_tokens=1024
     )
     return response.choices[0].message.content.strip()
