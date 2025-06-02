@@ -12,3 +12,15 @@ conda env create -f environment.yml
 ```
 
 ## 使用方式
+### Step 1. 
+在 app/ 中新建 .env 檔，並加入以下文字：
+```
+OPENAI_API_KEY = Your_API_key
+SERVER_IP = Your_Server_Address
+```
+### Step 1.     (跳過這步驟，後端功能尚未完善，未來希望讓 user 從網頁加入教材，並選擇從指定教材學習資料)
+將自己的教材放入 Source/ 後，執行 gen_chunk_Index_to_weavaite.py
+### Step 2. 
+執行 app.py，利用 flask 建置 Developer 私人網站，進入聊天室網頁畫面
+### Step 3.
+在網頁聊天室提出問題，得到回答
