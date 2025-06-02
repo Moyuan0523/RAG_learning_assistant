@@ -8,8 +8,15 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 from typing import List
 
+load_dotenv()
+server_ip = os.getenv("SERVER_IP")
+
 # 連接 weaviate v3 資料庫
-weaviate_client = weaviate.Client("http://140.116.82.104:8080")
+weaviate_client = weaviate.Client("http://" + server_ip + ":8080")
+if weaviate_client.is_ready():
+    print("Connected to Weaviate")
+else:
+    print("Failed to connect to Weaviate")
 
 # 初始化遷入模型（免費、本地）
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
