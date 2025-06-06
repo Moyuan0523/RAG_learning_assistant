@@ -4,6 +4,7 @@ import faiss
 import openai
 import numpy as np
 import weaviate 
+from dotenv import load_dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 from typing import List

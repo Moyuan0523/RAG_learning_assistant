@@ -36,6 +36,16 @@
 <body class="bg-light">
 <div class="container mt-5">
     <h1 class="mb-4">🤖 RAG Learning Assisant</h1>
+    <div class="mb-4">
+        <form id="upload-form" enctype="multipart/form-data">
+            <label for="pdf-file" class="form-label">上傳您的教材</label>
+            <div class=""input-group>
+                <input type="file" class="form-control" id="pdf-file" name="file" accept=".pdf" required> <br>
+                <button type="submit" class="btn btn-success">Upload</button>
+            </div>
+        </form>
+        <div id="upload-status" class="form-text mt-2"></div>
+    </div>
 
     <div class="chat-box mb-4" id="chat-box">
         {% for msg in memory %}
@@ -154,6 +164,7 @@ document.getElementById("chat-form").addEventListener("submit", async function(e
 
     chatBox.scrollTop = chatBox.scrollHeight;
 });
+
 // 清除 Memory
 document.getElementById("reset-btn").addEventListener("click", async function () {
     if (!confirm("確定要清除記憶嗎？")) return;
@@ -162,6 +173,39 @@ document.getElementById("reset-btn").addEventListener("click", async function ()
 
     const chatBox = document.getElementById("chat-box");
     chatBox.innerHTML = "";  // 清空聊天室畫面
+});
+
+document.getElementById("upload-form").addEventListener("submit", async function (event) {
+    event.preventDefault(); // ??
+    
+    const fileInput = document.getElementById("pdf-file");
+    const file = fileInput.files[0];
+    const statusDiv = document.getElementById("upload-status");
+
+    if(!file){
+        statusDiv.textContent = "ONLY PDF";
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file); // file 加入表單內容
+
+    try {
+    const res = await fetch("/upload", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      statusDiv.textContent = `Upload Sucess：${data.filename}`;
+    } else {
+      statusDiv.textContent = `Error：${data.error}`;
+    }
+    } catch (err) {
+        statusDiv.textContent = "Upload Failed, try it later";
+        console.error(err);
+    }
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
