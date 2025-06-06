@@ -75,17 +75,23 @@ def upload_pdf():
     print("收到檔案：", file.filename)
     
     if file and allowed_pdf(file.filename):
-        print("before secure "+file.filename)
+        #print("before secure "+file.filename)
         filename = secure_filename(file.filename)
-        print("after secure "+filename)
+        #print("after secure "+filename)
         filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         file.save(filepath)
 
-        print("回傳 JSON：", {"status": "success", "filename": filename, "source": filename})
+        print(filename)
+        try:
+            pdf_to_weaviate(pdf_filename=filename, upload_folder=app.config["UPLOAD_FOLDER"])
+            print("上傳成功")
+        except Exception as e:
+            print("上傳失敗", e)
+
+        #print("回傳 JSON：", {"status": "success", "filename": filename, "source": filename})
         return jsonify({
             "status" : "success",
-            "filename" : filename,
-            "source" : filename # 後續 chunk 的 souce id
+            "filename" : filename
         }),200
     else:
         return jsonify({"error" : "ONLY PDF"}), 400
