@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, jsonify, current_app
 from werkzeug.utils import secure_filename
 from app.retriever import search_similar_chunks
 from app.generator import generate_answer
+from app.gen_chunks_Index_to_weaviate import connect_weaviate, pdf_to_weaviate
 #from langchain.memory import ConversationBufferMemory
 from app.selfmake_memory import CustomMemory 
 import pickle, os
@@ -38,15 +39,18 @@ def reset_memory():
 def chat():
     memory = current_app.config["memory"]
     data = request.get_json()
+
     query = data.get("query", "")
     memory.add_user_message(query)
 
-    # Debug 印出記憶內容
-    print("現在的記憶內容：")
-    for m in memory.get_history():
-        print(f"{m['role']}: {m['content']}")
+    source_filter = data.get("source_filter") or None # 未選(None)、空字串皆視為 None(全選)
+    print("收到的 source_filter：", source_filter)
 
-    retrieved_chunks = search_similar_chunks(query, top_k=10) # 引用段落
+    # print("現在的記憶內容：")
+    # for m in memory.get_history():
+    #     print(f"{m['role']}: {m['content']}")
+
+    retrieved_chunks = search_similar_chunks(query=query, top_k=10, source_filter=source_filter) # 引用段落
     top_chunks = [chunk["text"] for chunk in retrieved_chunks]
     answer = generate_answer(query, top_chunks, history=memory.get_history())
     memory.add_ai_message(answer, sources=retrieved_chunks)
@@ -85,7 +89,38 @@ def upload_pdf():
         }),200
     else:
         return jsonify({"error" : "ONLY PDF"}), 400
-    
+
+@app.route("/sources", methods=['GET'])
+def get_sources():
+    try:
+        weaviate_client = connect_weaviate()
+        all_sources = set() # set 去重複
+        page_size = 500
+        offset = 0
+
+        while True: # 每次查 500 筆，直至沒有
+            result = weaviate_client.query.get("Paragraph", ["source"]) \
+                .with_additional("id") \
+                .with_limit(page_size) \
+                .with_offset(offset) \
+                .do()
+
+            data = result.get("data", {}).get("Get", {}).get("Paragraph", [])
+            if not data:
+                break
+
+            for item in data:
+                if "source" in item:
+                    all_sources.add(item["source"]) # 把每個 chunk 來源加入，set 自動去重複
+
+            offset += page_size # 往後 500 頁尋找
+
+        return jsonify([{"source": s} for s in sorted(all_sources)])
+
+    except Exception as e:
+        print("❌ /sources failed:", repr(e))
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(use_reloader=False)

@@ -12,15 +12,15 @@ from typing import List
 load_dotenv()
 server_ip = os.getenv("SERVER_IP")
 
+# 初始化遷入模型（免費、本地）
+embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+
 # 連接 weaviate v3 資料庫
 weaviate_client = weaviate.Client("http://" + server_ip + ":8080")
 if weaviate_client.is_ready():
     print("Connected to Weaviate")
 else:
     print("Failed to connect to Weaviate")
-
-# 初始化遷入模型（免費、本地）
-embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # 讀取 Source PDF，回傳全文字串
 def load_pdf(file_path: str) -> str:
@@ -59,14 +59,37 @@ def build_faiss_index(chunks: List[str]):
     return index, embeddings
 
 # 語意查詢模組
-def search_similar_chunks(query: str, top_k: int = 3) -> List[str]:
+def search_similar_chunks(query: str, top_k: int = 3, source_filter: str = None) -> List[str]:
     query_vector = get_embedding(query) # 取得 query 的向量
     
     # 從 class Paragraph 得到兩個欄位
-    results = weaviate_client.query.get("Paragraph", ["text", "source"]) \
+    query_obj = weaviate_client.query.get("Paragraph", ["text", "source"]) \
         .with_near_vector({"vector" : query_vector}) \
-        .with_limit(top_k) \
-        .do()
+        .with_limit(top_k)
+    
+    if source_filter:
+        if isinstance(source_filter, list):
+            # 多個來源，便執行or條件
+            or_conditions = [
+                {
+                    "path": ["source"],
+                    "operator": "Equal",
+                    "valueText": src
+                } for src in source_filter
+            ]
+            query_obj = query_obj.with_where({
+                "operator": "Or",
+                "operands": or_conditions
+        })
+        elif isinstance(source_filter, str):
+            # 單一來源（例如前端未轉 list）
+            query_obj = query_obj.with_where({
+                "path": ["source"],
+                "operator": "Equal",
+                "valueText": source_filter
+            })
+    
+    results = query_obj.do()
     
     return[
         {

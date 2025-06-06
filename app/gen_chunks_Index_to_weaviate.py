@@ -3,70 +3,70 @@ import os
 import pickle
 import uuid
 from dotenv import load_dotenv
-from openai import OpenAI
 from app.retriever import load_pdf, split_text, get_embedding
 import weaviate
 
-# 讀取環境變數
-load_dotenv()
-server_ip = os.getenv("SERVER_IP")
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+def connect_weaviate():
+    # 讀取環境變數
+    load_dotenv()
+    server_ip = os.getenv("SERVER_IP")
 
-# 連接 Weaviate v3 遠端資料庫
-weaviate_client = weaviate.Client("http://" + server_ip + ":8080")
-if weaviate_client.is_ready():
-    print("Connected to Weaviate")
-else:
-    print("Failed to connect to Weaviate")
+    # 連接 Weaviate v3 遠端資料庫
+    weaviate_client = weaviate.Client("http://" + server_ip + ":8080")
+    if weaviate_client.is_ready():
+        print("Connected to Weaviate")
+    else:
+        print("Failed to connect to Weaviate")
+    return weaviate_client
 
-# chunks 與教材的儲存位置，多存一個本地保險
-pdf_path = "Sources/Introduction to Data Mining-Pearson Education Limited (2019)-Pang-Ning Tan.pdf"
-filename = os.path.basename(pdf_path)
-source_name = filename.replace(".pdf", "")
-chunks_path = "chunks/data_mining.pkl"
+def pdf_to_weaviate(pdf_filename:str, upload_folder = "Sources"):
 
-# 讀取資料並切割為 chunks
-text = load_pdf(pdf_path)
-chunks = split_text(text)
+    pdf_path = os.path.join(upload_folder,pdf_filename)
+    if not os.path.exists(pdf_path):
+        raise FileNotFoundError(f"{pdf_path} 不存在")
+    source_name = pdf_filename.replace(".pdf", "")
 
-# 儲存本地 chunk 備份
-with open(chunks_path, "wb") as f:
-    pickle.dump(chunks, f)
 
-# 建立 Weaviate schema 
-class_obj = {
-    "class": "Paragraph",
-    "description": "Chunks from Data Mining PDF",
-    "vectorizer": "none",
-    "properties": [
-        {"name": "text", "dataType": ["text"]},
-        {"name": "source", "dataType": ["text"]}
-    ]
-}
-try:
-    if "Paragraph" not in [c['class'] for c in weaviate_client.schema.get()["classes"]]:
-        weaviate_client.schema.create_class(class_obj)
-        print("已新建立 Paragraph schema")
+    # 讀取資料並切割為 chunks
+    text = load_pdf(pdf_path)
+    chunks = split_text(text)
 
-    # 上傳 chunks and embedding    
-    for i, chunk in enumerate(chunks):
-        embedding = get_embedding(chunk)
-        weaviate_client.data_object.create(
-            {
-                "text": chunk,
-                "source": source_name
-            },
-            class_name = "Paragraph",
-            uuid = str(uuid.uuid4()), # 為 chunk 加入唯一識別碼
-            vector = embedding
-        )
-        if i % 10 == 0:
-            print(f"已上傳 {i} 段")
+    # 建立 Weaviate schema 
+    class_obj = {
+        "class": "Paragraph",
+        "description": "Chunks from uploaded PDFs",
+        "vectorizer": "none",
+        "properties": [
+            {"name": "text", "dataType": ["text"]},
+            {"name": "source", "dataType": ["text"]}
+        ]
+    }
 
-    print(f"上傳完成，共 {len(chunks)} 段。已建立 Weaviate 向量索引！")
+    try:
+        weaviate_client = connect_weaviate()
+        if "Paragraph" not in [c['class'] for c in weaviate_client.schema.get()["classes"]]:
+            weaviate_client.schema.create_class(class_obj)
+            print("已新建立 Paragraph schema")
 
-except Exception as e:
-    print("發生錯誤:\n", e)
+        # 上傳 chunks and embedding    
+        for i, chunk in enumerate(chunks):
+            embedding = get_embedding(chunk)
+            weaviate_client.data_object.create(
+                {
+                    "text": chunk,
+                    "source": source_name
+                },
+                class_name = "Paragraph",
+                uuid = str(uuid.uuid4()), # 為 chunk 加入唯一識別碼
+                vector = embedding
+            )
+            if i % 10 == 0:
+                print(f"已上傳 {i} 段")
 
-finally:
-    print("關閉連線")
+        print(f"上傳完成，共 {len(chunks)} 段。已建立 Weaviate 向量索引！")
+
+    except Exception as e:
+        print("發生錯誤:\n", e)
+
+    finally:
+        print("關閉連線")
