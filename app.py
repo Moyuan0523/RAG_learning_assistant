@@ -124,7 +124,7 @@ def get_sources():
         return jsonify([{"source": s} for s in sorted(all_sources)])
 
     except Exception as e:
-        print("❌ /sources failed:", repr(e))
+        print(" /sources failed:", repr(e))
         return jsonify({"error": str(e)}), 500
 
 
