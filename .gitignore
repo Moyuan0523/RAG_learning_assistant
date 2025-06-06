@@ -4,3 +4,4 @@ app/.env
 app/gen_chunks_index_to_FAISS.py
 app/retriever_original.py
 chunks/
+.DS_Store
