@@ -70,3 +70,4 @@ def pdf_to_weaviate(pdf_filename:str, upload_folder = "Sources"):
 
     finally:
         print("關閉連線")
+

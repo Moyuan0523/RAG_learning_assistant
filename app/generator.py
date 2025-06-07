@@ -17,9 +17,6 @@ def build_prompt(query: str, contexts: list[str]) -> str:
 
 {query}
 """
-
-# 根據以下資料內容回答問題。若無明確資訊，請誠實說不知道，不要編造。
-
 # 資料內容：
 # 段落1內容
 # ---
