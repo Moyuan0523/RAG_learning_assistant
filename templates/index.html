@@ -34,12 +34,13 @@
     </style>
 </head>
 <body class="bg-light">
+<!-- Informations on the top section -->
 <div class="container mt-5">
-    <h1 class="mb-4">🤖 RAG Learning Assisant</h1>
+    <h1 class="mb-4">RAG Learning Assisant</h1>
     <div class="row mb-4">
         <div class="col-md-7">
             <form id="upload-form" enctype="multipart/form-data">
-                <label for="pdf-file" class="form-label">上傳您的教材</label>
+                <label for="pdf-file" class="form-label">Upload your own PDFs</label>
                 <div class="input-group">
                     <input type="file" class="form-control" id="pdf-file" name="file" accept=".pdf" required> <br>
                     <button type="submit" class="btn btn-success">Upload</button>
@@ -48,15 +49,23 @@
             </form>
         </div>
         <div class="col-md-5">
-                <div class="mb-2">
-            <label for="source-filter" class="form-label">選擇資料來源：</label>
-            <div id="source-checkboxes" class="form-check d-flex flex-column gap-1 border rounded p-2" style="max-height: 180px; overflow-y: auto;">
-                <!-- JavaScript 動態填入 checkbox -->
+            <div class="mb-2">
+                <label for="source-filter" class="form-label">Sources：</label>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        選擇資料來源
+                    </button>
+                    <div class="dropdown-menu w-100 p-2" style="max-height: 180px; overflow-y: auto;">
+                        <div id="source-checkboxes" class="d-flex flex-column gap-1">
+                            <!-- JavaScript 動態填入 checkbox -->
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
         </div>
     </div>
 
+    <!-- Chatbox -->
     <div class="chat-box mb-4" id="chat-box">
         {% for msg in memory %}
             {% if msg.role == "user" %}
@@ -89,15 +98,13 @@
         {% endfor %}
     </div>
 
-    <div class="d-flex justify-content-end mb-2">
-        <button id="reset-btn" class="btn btn-outline-danger btn-sm">清除記憶</button>
-    </div>
-
-
-    <form id="chat-form">
+    <form id="chat-form" class="mb-4" style="margin-top: -20px;">
+        <div class="d-flex justify-content-end mb-2">
+            <button id="reset-btn" class="btn btn-outline-danger btn-sm">Reset Memory</button>
+        </div>
         <div class="input-group">
-            <input type="text" class="form-control" id="query" placeholder="輸入你的問題..." required autofocus>
-            <button type="submit" class="btn btn-primary">送出</button>
+            <input type="text" class="form-control" id="query" placeholder="Ask anything" required autofocus>
+            <button type="submit" class="btn btn-primary">Submit</button>
         </div>
     </form>
 </div>
