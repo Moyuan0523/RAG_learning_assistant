@@ -1,5 +1,5 @@
 # RAG_learning_assistant
-RAG Learning Assistant 是一個基於 Retrieval-Augmented Generation 技術的智慧聊天助理，透過 Flask 網頁應用整合 Weaviate 向量資料庫與 OpenAI API，提供文件知識查詢與自然語言回答的能力。
+RAG Learning Assistant is a Retrieval-Augmented Generation (RAG) based system that integrates the Weaviate vector database and OpenAI API through a Flask web application, enabling document-based knowledge retrieval and natural language question answering from user-uploaded documents.
 ![畫面預覽](templates/architecture.png)
 
 ## 功能特色
