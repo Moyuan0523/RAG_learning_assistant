@@ -12,7 +12,7 @@ import datetime
 class CustomMemory:
     def __init__(self):
         self.chat_history = [] # 紀錄所有對話
-        print("🚨 CustomMemory 被建立了")
+        #print("CustomMemory 已建立")
     
     # 加入 User 的回答
     def add_user_message(self, content):
