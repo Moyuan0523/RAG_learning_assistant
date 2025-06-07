@@ -3,21 +3,8 @@ import os
 import pickle
 import uuid
 from dotenv import load_dotenv
-from app.retriever import load_pdf, split_text, get_embedding
+from app.retriever import load_pdf, split_text, get_embedding, connect_weaviate
 import weaviate
-
-def connect_weaviate():
-    # 讀取環境變數
-    load_dotenv()
-    server_ip = os.getenv("SERVER_IP")
-
-    # 連接 Weaviate v3 遠端資料庫
-    weaviate_client = weaviate.Client("http://" + server_ip + ":8080")
-    if weaviate_client.is_ready():
-        print("Connected to Weaviate")
-    else:
-        print("Failed to connect to Weaviate")
-    return weaviate_client
 
 def pdf_to_weaviate(pdf_filename:str, upload_folder = "Sources"):
 

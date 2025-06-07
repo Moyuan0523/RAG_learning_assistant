@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-client = OpenAI()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # 組合出送進 GPT 的 Prompt (User's question + relative chunks)
 def build_prompt(query: str, contexts: list[str]) -> str:
