@@ -49,4 +49,3 @@ class CustomMemory:
             role = "user" if msg["role"] == "user" else "assistant"
             prompt += f"{role}: {msg['content']}\n"
         return prompt
-    
