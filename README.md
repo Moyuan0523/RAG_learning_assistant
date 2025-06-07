@@ -3,15 +3,15 @@ RAG Learning Assistant is a Retrieval-Augmented Generation (RAG) based system th
 ![Architecture](templates/architecture1.png)
 
 ## Features
-1. Custom Sources
-Users can upload their own materials in PDF format.The system will automatically segment, vectorize, and index the content into the knowledge base for downstream question answering.
-2. Intelligent Chat with Memory
-The system features a conversaction memory mechanism. AI considers previous questions and answers to provide more coherent and context-aware responses.
-3. Answering Questions on Trusted Sources
+1. Custom Sources  
+Users can upload their own materials in PDF format.The system will automatically segment, vectorize, and index the content into the knowledge base for downstream question answering.  
+2. Intelligent Chat with Memory  
+The system features a conversaction memory mechanism. AI considers previous questions and answers to provide more coherent and context-aware responses.  
+3. Answering Questions on Trusted Sources  
 AI responses are primarily generated from the content of user-uploaded documents.
-Each answer includes clearly marked citations to improve verifiability and trustworthiness.
-4. Source Selection and Control
-Users can choose specific sources from uploaded materials to be used for answering, helping to avoid interference from irrelevant documents.
+Each answer includes clearly marked citations to improve verifiability and trustworthiness.  
+4. Source Selection and Control  
+Users can choose specific sources from uploaded materials to be used for answering, helping to avoid interference from irrelevant documents.  
 
 Instead of generating answers purely from a language model, this project uses a Retrieval-Augmented Generation (RAG) approach to improve control and transparency.
 Users can trace the source of each response, reducing hallucination and ensuring relevance to the uploaded content.
