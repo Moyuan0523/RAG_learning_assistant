@@ -1,42 +1,45 @@
 # RAG_learning_assistant
 RAG Learning Assistant is a Retrieval-Augmented Generation (RAG) based system that integrates the Weaviate vector database and OpenAI API through a Flask web application, enabling document-based knowledge retrieval and natural language question answering from user-uploaded documents.
-![畫面預覽](templates/architecture1.png)
+![Architecture](templates/architecture1.png)
 
-## 功能特色
-1. 可上傳自定教材來源
-使用者可自由上傳 PDF 格式的教材或參考資料，系統將自動化地切割、向量化並索引至知識庫，作為後續問答依據。
-2. 具備記憶功能的智慧聊天室
-系統具備對話記憶（memory）功能，AI 回答時會自動考慮歷史提問與回覆脈絡，提供更連貫、有條理的回答。
-3. 基於可信資料來源生成回應
-AI 回答內容大多來自使用者所上傳的資料段落，並明確標示引用來源，提升回答的可驗證性與信任度。
-4. 來源篩選控制能力
-使用者可以從已上傳的多個教材中**選擇要參考的來源**，避免干擾性資料。
+## Features
+1. Custom Sources
+Users can upload their own materials in PDF format.The system will automatically segment, vectorize, and index the content into the knowledge base for downstream question answering.
+2. Intelligent Chat with Memory
+The system features a conversaction memory mechanism. AI considers previous questions and answers to provide more coherent and context-aware responses.
+3. Answering Questions on Trusted Sources
+AI responses are primarily generated from the content of user-uploaded documents.
+Each answer includes clearly marked citations to improve verifiability and trustworthiness.
+4. Source Selection and Control
+Users can choose specific sources from uploaded materials to be used for answering, helping to avoid interference from irrelevant documents.
 
-不同於一般將問題直接交由語言模型處理的作法，本專案採用 RAG（Retrieval-Augmented Generation）架構，讓 AI 回答更可控、資訊來源更明確。使用者不僅能掌握回答依據，也能確保 AI 回應更貼近所提供內容，降低幻覺（hallucination）風險。
+Instead of generating answers purely from a language model, this project uses a Retrieval-Augmented Generation (RAG) approach to improve control and transparency.
+Users can trace the source of each response, reducing hallucination and ensuring relevance to the uploaded content.
 
-## 安裝指南
-### git 下載
-`git clone https://github.com/Moyuan0523/RAG_learning_assistant`
-### conda 環境架設
+## installing
+### Using conda
 ```bash
 conda env create -f environment.yml
 ```
 
-## 使用方式
-### Step 1. 
-在 app/ 中新建 .env 檔，並加入以下文字：
+## How to Run the project
+### Step 1. set up the enviornment 
+Create a `.env` file in `app/`，and add the text of following：
 ```
 OPENAI_API_KEY = Your_API_key
-SERVER_IP = Your_Server_Address
+SERVER_IP = Your_Server_Address:Database_Port
 ```
-### Step 2.
-在本地 or 遠端建置 weaviate v3 向量資料庫（本專案利用 Docker 建置）
-### Step 3.  
-執行 app.py，利用 flask 建置 Developer 私人網站，進入聊天室網頁畫面
-### Step 4. 
-透過網頁中的 **Upload** 按鈕上傳教材（限 PDF），系統將自動將該教材儲存、分段、向量化、存於遠端的 weaviate 並標記個段的來源
-### Step 5.
-使用者可從已上傳教材中勾選一份或多份來源，作為 AI 回答的依據範圍，為勾選即預設使用所有資料。
+### Step 2. Start the weaviate vector database (via Docker)
+Set up Weaviate v3 on your remote server using Docker 
+### Step 3. Run the Flask web application
+```bash
+python app.py
+```
+### Step 4. Upload your document
+Click **Upload** on the wed interface to upload PDFs. The system wil automatically chunk, index and mark their source into Weaviate.
+### Step 5. Select sources
+Select single or multiple source for answering on web interface (Default using all source when selecting nothing.)
 ### Step 6.
-在聊天室輸入問題，AI 將根據已選資料來源進行語意檢索並回答。  
-回答下方可點選「展開引用段落」，即時查看生成依據，協助比對與評估其正確性與可信度。
+Asking questions in the chat, AI retrieves and answers based on selected sources.
+Click “Expand Reference” to view the supporting content and assess answer accuracy.
+
