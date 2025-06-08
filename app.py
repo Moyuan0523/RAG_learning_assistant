@@ -12,8 +12,6 @@ import uuid
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 app = Flask(__name__)
-#memory = ConversationBufferMemory(return_messages = True) # 初始化 memory
-#source_mapping = {} # 原本是 list，改用 dict 以 uuid 當 Key 辨識每一次回答，避免記憶遺失
 app.config["memory"] = CustomMemory() # Flask context-safe，確保每次讀同樣的 memory (Flask 可能開啟多執行序，因debug = true)
 print("Flask 啟動中，DEBUG =", app.debug)
 
@@ -22,13 +20,13 @@ ALLOWED_EXTENSIONS = {"pdf"}
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER #??
 
-# 用以載入首頁
+# Load homepage
 @app.route("/", methods=["GET"])
 def home():
     memory = current_app.config["memory"]
     return render_template("index.html", memory=memory.get_history())
 
-# 清除重置 Memory
+# Reset Memory
 @app.route("/reset", methods=["POST"])
 def reset_memory():
     current_app.config["memory"] = CustomMemory()
@@ -101,7 +99,7 @@ def get_sources():
     try:
         weaviate_client = connect_weaviate()
         all_sources = set() # set 去重複
-        page_size = 500
+        page_size = 2000
         offset = 0
 
         while True: # 每次查 500 筆，直至沒有

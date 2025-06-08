@@ -22,7 +22,7 @@ Users can trace the source of each response, reducing hallucination and ensuring
 conda env create -f environment.yml
 ```
 
-## How to Run the project
+## Runnung the Application
 ### Step 1. set up the enviornment 
 Create a `.env` file in `app/`，and add the text of following：
 ```
@@ -35,6 +35,8 @@ Set up Weaviate v3 on your remote server using Docker
 ```bash
 python app.py
 ```
+then Access the interface
+- http://127.0.0.1:5000
 ### Step 4. Upload your document
 Click **Upload** on the wed interface to upload PDFs. The system wil automatically chunk, index and mark their source into Weaviate.
 ### Step 5. Select sources

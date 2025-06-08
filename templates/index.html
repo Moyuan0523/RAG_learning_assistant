@@ -1,269 +1,222 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <title>RAG 聊天室助理</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .chat-bubble {
-            max-width: 75%;
-            padding: 10px 15px;
-            border-radius: 15px;
-            margin-bottom: 10px;
-        }
-        .user-msg {
-            background-color: #d1e7dd;
-            align-self: flex-end;
-            text-align: right;
-        }
-        .ai-msg {
-            background-color: #f8d7da;
-            align-self: flex-start;
-            text-align: left;
-        }
-        .chat-box {
-            display: flex;
-            flex-direction: column;
-            height: 70vh;
-            overflow-y: auto;
-            border: 1px solid #ccc;
-            padding: 15px;
-            border-radius: 10px;
-            background: white;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>RAG 聊天室助理</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-size: 1.3rem;
+      line-height: 1.6;
+    }
+    .chat-bubble {
+      max-width: 75%;
+      padding: 10px 15px;
+      border-radius: 15px;
+      margin-bottom: 10px;
+      word-wrap: break-word;
+    }
+    .user-msg {
+      background-color: #d1e7dd;
+      align-self: flex-end;
+      text-align: right;
+    }
+    .ai-msg {
+      background-color: #f8d7da;
+      align-self: flex-start;
+      text-align: left;
+    }
+    .chat-box {
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 15px;
+      border-radius: 10px;
+      background: transparent;
+    }
+  </style>
 </head>
+
 <body class="bg-light">
-<!-- Informations on the top section -->
-<div class="container mt-5">
-    <h1 class="mb-4">RAG Learning Assisant</h1>
-    <div class="row mb-4">
+  <div class="d-flex flex-column vh-100">
+    <!-- 中間區域 -->
+    <div class="container flex-grow-1 overflow-auto py-4">
+      <h1 class="mb-4">RAG Learning Assistant</h1>
+
+      <!-- Upload Form -->
+      <div class="row mb-4">
         <div class="col-md-7">
-            <form id="upload-form" enctype="multipart/form-data">
-                <label for="pdf-file" class="form-label">Upload your own PDFs</label>
-                <div class="input-group">
-                    <input type="file" class="form-control" id="pdf-file" name="file" accept=".pdf" required> <br>
-                    <button type="submit" class="btn btn-success">Upload</button>
-                </div>
-                <div id="upload-status" class="form-text mt-2"></div>
-            </form>
+          <form id="upload-form" enctype="multipart/form-data">
+            <label for="pdf-file" class="form-label">Upload your own PDFs</label>
+            <div class="input-group">
+              <input type="file" class="form-control" id="pdf-file" name="file" accept=".pdf" required>
+              <button type="submit" class="btn btn-success">Upload</button>
+            </div>
+            <div id="upload-status" class="form-text mt-2"></div>
+          </form>
         </div>
         <div class="col-md-5">
-            <div class="mb-2">
-                <label for="source-filter" class="form-label">Sources：</label>
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        選擇資料來源
-                    </button>
-                    <div class="dropdown-menu w-100 p-2" style="max-height: 180px; overflow-y: auto;">
-                        <div id="source-checkboxes" class="d-flex flex-column gap-1">
-                            <!-- JavaScript 動態填入 checkbox -->
-                        </div>
-                    </div>
-                </div>
+          <label for="source-filter" class="form-label">Sources：</label>
+          <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" data-bs-toggle="dropdown">
+              選擇資料來源
+            </button>
+            <div class="dropdown-menu w-100 p-2" style="max-height: 180px; overflow-y: auto;">
+              <div id="source-checkboxes" class="d-flex flex-column gap-1">
+                <!-- 動態載入 -->
+              </div>
             </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Chatbox -->
+      <div id="chat-box" class="chat-box mb-3">
+        <!-- 動態訊息注入 -->
+      </div>
     </div>
 
-    <!-- Chatbox -->
-    <div class="chat-box mb-4" id="chat-box">
-        {% for msg in memory %}
-            {% if msg.role == "user" %}
-                <div class="chat-bubble user-msg ms-auto">{{ msg.content }}</div>
-            {% elif msg.role == "assistant" %}
-                <div class="chat-bubble ai-msg me-auto">{{ msg.content }}</div>
-
-                {% if msg.sources is defined and msg.sources %}
-                <div class="me-auto mb-3">
-                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-init-{{ loop.index }}">
-                        🔎 展開引用段落
-                    </button>
-                    <div class="collapse mt-2" id="collapse-init-{{ loop.index }}">
-                        <ol>
-                            {% for chunk in msg.sources %}
-                            <li class="mb-2">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <p><strong>📄 來源：</strong> {{ chunk.source }}</p>
-                                        <p style="white-space: pre-wrap">{{ chunk.text }}</p>
-                                    </div>
-                                </div>
-                            </li>
-                            {% endfor %}
-                        </ol>
-                    </div>
-                </div>
-                {% endif %}
-            {% endif %}
-        {% endfor %}
-    </div>
-
-    <form id="chat-form" class="mb-4" style="margin-top: -20px;">
-        <div class="d-flex justify-content-end mb-2">
-            <button id="reset-btn" class="btn btn-outline-danger btn-sm">Reset Memory</button>
+    <!-- 底部輸入區 -->
+    <form id="chat-form" class="py-3 px-4 bg-white" style="border-top: 1px solid #eee; margin-bottom: 50px;">
+      <div class="container">
+        <div class="d-flex">
+          <input type="text" class="form-control me-2" id="query" placeholder="Type your message..." required autofocus>
+          <button type="submit" class="btn btn-primary me-2">
+            <i class="bi bi-send-fill"></i>
+          </button>
+          <button type="button" id="reset-btn" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-counterclockwise"></i>
+          </button>
         </div>
-        <div class="input-group">
-            <input type="text" class="form-control" id="query" placeholder="Ask anything" required autofocus>
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </div>
+      </div>
     </form>
-</div>
+  </div>
 
-<script>
-document.getElementById("chat-form").addEventListener("submit", async function(event) {
-    event.preventDefault();
-    const input = document.getElementById("query");
-    const message = input.value.trim();
-    if (!message) return;
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // chat 提交
+    document.getElementById("chat-form").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const input = document.getElementById("query");
+      const message = input.value.trim();
+      if (!message) return;
 
-    const chatBox = document.getElementById("chat-box");
+      const chatBox = document.getElementById("chat-box");
+      const selectedSources = Array.from(document.querySelectorAll("#source-checkboxes input[type='checkbox']:checked")).map(cb => cb.value);
 
-    // User 選擇的資料來源
-    const sourceSelect = document.getElementById("source-filter");
-    const selectedSources = Array.from(document.querySelectorAll("#source-checkboxes input[type='checkbox']:checked")).map(cb => cb.value);
-    console.log("選擇之教材來源：", selectedSources);
+      // user 氣泡
+      const userBubble = document.createElement("div");
+      userBubble.className = "chat-bubble user-msg ms-auto";
+      userBubble.textContent = message;
+      chatBox.appendChild(userBubble);
+      input.value = "";
 
-    // User 訊息
-    const userBubble = document.createElement("div");
-    userBubble.className = "chat-bubble user-msg ms-auto";
-    userBubble.textContent = message;
-    chatBox.appendChild(userBubble);
-
-    input.value = "";
-
-    const response = await fetch("/chat", {
+      const response = await fetch("/chat", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ 
-            query: message,
-            source_filter: selectedSources.length > 0 ? selectedSources : null // null 不篩選
-        })
-    });
-    const data = await response.json();
+        body: JSON.stringify({ query: message, source_filter: selectedSources.length > 0 ? selectedSources : null })
+      });
 
-    // AI 訊息
-    const aiBubble = document.createElement("div");
-    aiBubble.className = "chat-bubble ai-msg me-auto";
-    aiBubble.innerHTML = data.answer;
-    chatBox.appendChild(aiBubble);
+      const data = await response.json();
 
-    // 引用段落（若有）
-    if (data.sources && data.sources.length > 0) {
-        const sourceWrapper = document.createElement("div");
-        sourceWrapper.className = "me-auto mb-3";
+      // AI 氣泡
+      const aiBubble = document.createElement("div");
+      aiBubble.className = "chat-bubble ai-msg me-auto";
+      aiBubble.innerHTML = data.answer;
+      chatBox.appendChild(aiBubble);
 
-        const btn = document.createElement("button");
-        btn.className = "btn btn-sm btn-outline-secondary";
-        btn.type = "button";
+      // 引用段落
+      if (data.sources && data.sources.length > 0) {
         const collapseId = `collapse${Date.now()}`;
-        btn.setAttribute("data-bs-toggle", "collapse");
-        btn.setAttribute("data-bs-target", `#${collapseId}`);
-        btn.textContent = "🔎 展開引用段落";
+        const wrapper = document.createElement("div");
+        wrapper.className = "me-auto mb-3";
 
-        const collapseDiv = document.createElement("div");
-        collapseDiv.className = "collapse mt-2";
-        collapseDiv.id = collapseId;
-
-        const list = document.createElement("ol");
-        for (const chunk of data.sources) {
-            const li = document.createElement("li");
-            li.className = "mb-2";
-            li.innerHTML = `
+        wrapper.innerHTML = `
+          <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+            🔎 展開引用段落
+          </button>
+          <div class="collapse mt-2" id="${collapseId}">
+            <ol>${data.sources.map(chunk => `
+              <li class="mb-2">
                 <div class="card">
-                    <div class="card-body">
-                        <p><strong>📄 來源：</strong> ${chunk.source}</p>
-                        <p style="white-space: pre-wrap">${chunk.text}</p>
-                    </div>
+                  <div class="card-body">
+                    <p><strong>📄 來源：</strong> ${chunk.source}</p>
+                    <p style="white-space: pre-wrap">${chunk.text}</p>
+                  </div>
                 </div>
-            `;
-            list.appendChild(li);
-        }
+              </li>`).join('')}
+            </ol>
+          </div>
+        `;
+        chatBox.appendChild(wrapper);
+      }
 
-        collapseDiv.appendChild(list);
-        sourceWrapper.appendChild(btn);
-        sourceWrapper.appendChild(collapseDiv);
-        chatBox.appendChild(sourceWrapper);
-    }
-
-    chatBox.scrollTop = chatBox.scrollHeight;
-});
-
-// 清除 Memory
-document.getElementById("reset-btn").addEventListener("click", async function () {
-    if (!confirm("確定要清除記憶嗎？")) return;
-
-    await fetch("/reset", { method: "POST" });
-
-    const chatBox = document.getElementById("chat-box");
-    chatBox.innerHTML = "";  // 清空聊天室畫面
-});
-
-// 上傳資料
-document.getElementById("upload-form").addEventListener("submit", async function (event) {
-    event.preventDefault(); // ??
-    
-    const fileInput = document.getElementById("pdf-file");
-    const file = fileInput.files[0];
-    const statusDiv = document.getElementById("upload-status");
-
-    if(!file){
-        statusDiv.textContent = "ONLY PDF";
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", file); // file 加入表單內容
-
-    try {
-    const res = await fetch("/upload", {
-      method: "POST",
-      body: formData
+      chatBox.scrollTop = chatBox.scrollHeight;
     });
 
-    const data = await res.json();
-    if (res.ok) {
-      statusDiv.textContent = `Upload Sucess：${data.filename}`;
-    } else {
-      statusDiv.textContent = `Error：${data.error}`;
-    }
-    } catch (err) {
-        statusDiv.textContent = "Upload Failed, try it later";
+    // reset
+    document.getElementById("reset-btn").addEventListener("click", async () => {
+      if (!confirm("確定要清除記憶嗎？")) return;
+      await fetch("/reset", { method: "POST" });
+      document.getElementById("chat-box").innerHTML = "";
+    });
+
+    // upload
+    document.getElementById("upload-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const file = document.getElementById("pdf-file").files[0];
+      const status = document.getElementById("upload-status");
+      if (!file) {
+        status.textContent = "Please select a PDF.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const res = await fetch("/upload", { method: "POST", body: formData });
+        const data = await res.json();
+        status.textContent = res.ok ? `Uploaded: ${data.filename}` : `Error: ${data.error}`;
+      } catch (err) {
         console.error(err);
-    }
-});
+        status.textContent = "Upload failed";
+      }
+    });
 
-// 仔入目前資料庫有的資料來源
-window.addEventListener("DOMContentLoaded", async () => {
-    const container = document.getElementById("source-checkboxes");
-    if (!container) return;
+    // load sources
+    window.addEventListener("DOMContentLoaded", async () => {
+      const container = document.getElementById("source-checkboxes");
+      if (!container) return;
 
-    try {
+      try {
         const res = await fetch("/sources");
         const data = await res.json();
 
         data.forEach(item => {
-            const label = document.createElement("label");
-            label.className = "form-check-label";
+          const wrapper = document.createElement("div");
+          wrapper.className = "form-check";
 
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.value = item.source;
-            checkbox.className = "form-check-input me-2";
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.value = item.source;
+          checkbox.className = "form-check-input me-2";
 
-            label.appendChild(checkbox);
-            label.append(item.source);
+          const label = document.createElement("label");
+          label.className = "form-check-label";
+          label.appendChild(checkbox);
+          label.append(item.source);
 
-            const wrapper = document.createElement("div");
-            wrapper.className = "form-check";
-            wrapper.appendChild(label);
-            container.appendChild(wrapper);
+          wrapper.appendChild(label);
+          container.appendChild(wrapper);
         });
-    } catch (err) {
+      } catch (err) {
         console.error("無法載入教材清單：", err);
-    }
-});
-
-</script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+      }
+    });
+  </script>
 </body>
 </html>
