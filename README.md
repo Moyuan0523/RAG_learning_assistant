@@ -17,8 +17,14 @@ Instead of generating answers purely from a language model, this project uses a 
 Users can trace the source of each response, reducing hallucination and ensuring relevance to the uploaded content.
 
 ## installing
-### Using conda
 ```bash
+# Clone the repository
+git clone https://github.com/Moyuan0523/RAG_learning_assistant
+
+# Navigate into the directory
+cd RAG-learning_assistant
+
+# Install dependencies
 conda env create -f environment.yml
 ```
 
