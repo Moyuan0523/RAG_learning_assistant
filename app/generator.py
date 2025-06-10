@@ -5,7 +5,7 @@ import os
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# 組合出送進 GPT 的 Prompt (User's question + relative chunks)
+# Merge prompt and send to GPT (User's question + relative chunks)
 def build_prompt(query: str, contexts: list[str]) -> str:
     context_text = "\n---\n".join(contexts)
     return f"""以下是與問題有關的資料段落：
@@ -17,12 +17,15 @@ def build_prompt(query: str, contexts: list[str]) -> str:
 
 {query}
 """
-# 資料內容：
+# Context：
 # 段落1內容
 # ---
 # 段落2內容
 # ---
 # 段落3內容
+# ...
+# 段落 {top_k} 內容
+# ---
 
 # 問題：
 # 什麼是 Gini 指數？
@@ -43,18 +46,18 @@ def generate_answer(query: str, contexts: list[str], history: list = [], model =
         {"role" : "system", "content" : "你是個嚴謹的學習助理，請根據提供的資料與對話內容作答。嚴禁編造。"}
     ]
 
-    # 加入歷史對話，轉換成 GPT 接受的格式
+    # add history
     messages += convert_history_to_openai_format(history)
-    # 組合 prompt
+    # get prompt
     prompt = build_prompt(query, contexts)
-    # 將這次的 prompt 加入 user 歷史回答中
+    # add this prompt to memory for future
     messages.append({"role" : "user", "content" : prompt})
 
-    # 呼叫 OpenAI 的 Chat Completions API
+    # OpenAI, GPT 3.5 turbo
     response = client.chat.completions.create(
         model = model,
         messages = messages,
-        temperature = 0.3, # 回答的創意程度，卻低越穩定，越高越創意
+        temperature = 0.3, # Responing creativity
         max_tokens=1024
     )
     return response.choices[0].message.content.strip()

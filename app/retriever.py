@@ -1,5 +1,5 @@
 import os
-import fitz  # PyMuPDF的一部分，為讀取、編輯與分析PDF2的套件
+import fitz  # PyMuPDF
 import faiss
 import numpy as np
 import weaviate 
@@ -8,15 +8,15 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 from typing import List
 
-# 初始化遷入模型（免費、本地）
+# model for embedding, local, free
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
 
 def connect_weaviate():
-    # 讀取環境變數
+    # read enviornment variable
     load_dotenv()
     server_ip = os.getenv("SERVER_IP")
 
-    # 連接 Weaviate v3 遠端資料庫
+    # Connect Weaviate v3 DB on remote server 
     weaviate_client = weaviate.Client("http://" + server_ip + ":8080")
     if weaviate_client.is_ready():
         print("Connected to Weaviate")
@@ -24,7 +24,7 @@ def connect_weaviate():
         print("Failed to connect to Weaviate")
     return weaviate_client
 
-# 讀取 Source PDF，回傳全文字串
+# read PDF，get str for whole text
 def load_pdf(file_path: str) -> str:
     doc = fitz.open(file_path)
     pdf_content = ""
@@ -33,7 +33,7 @@ def load_pdf(file_path: str) -> str:
     doc.close()
     return pdf_content
 
-# 將文本切成有 overlap 的 chunks
+# Spilt pdf_text to overlaping chunks
 def split_text(text: str, chunk_size: int = 500, chunk_overlap: int = 50) -> List[str]: # 初始化數值，也可後續overwrite
     spliter = RecursiveCharacterTextSplitter(
         chunk_size = chunk_size,
@@ -43,7 +43,7 @@ def split_text(text: str, chunk_size: int = 500, chunk_overlap: int = 50) -> Lis
     return chunks
 
 def get_embedding(text: str) -> List[float]:
-    # 將文字片段轉為語意向量 （ HuggingFace ）
+    #  HuggingFace 
     return embedding_model.encode(text).tolist()
 
 # # 將 chunks 轉為向量後存入 FAISS 向量資料庫
@@ -60,19 +60,19 @@ def get_embedding(text: str) -> List[float]:
 #     index.add(np.array(embeddings).astype("float32")) # 存入資料庫
 #     return index, embeddings
 
-# 語意查詢模組
+# get the most similar chunks
 def search_similar_chunks(query: str, top_k: int = 3, source_filter: str = None) -> List[str]:
     weaviate_client = connect_weaviate()
-    query_vector = get_embedding(query) # 取得 query 的向量
+    query_vector = get_embedding(query) # query to vector
     
-    # 從 class Paragraph 得到兩個欄位
+    # Get the near vector from class Paragraph 
     query_obj = weaviate_client.query.get("Paragraph", ["text", "source"]) \
         .with_near_vector({"vector" : query_vector}) \
         .with_limit(top_k)
     
     if source_filter:
         if isinstance(source_filter, list):
-            # 多個來源，便執行or條件
+            # Multiple source, "OR" operator (store in List)
             or_conditions = [
                 {
                     "path": ["source"],
@@ -85,7 +85,7 @@ def search_similar_chunks(query: str, top_k: int = 3, source_filter: str = None)
                 "operands": or_conditions
         })
         elif isinstance(source_filter, str):
-            # 單一來源（例如前端未轉 list）
+            # Single source
             query_obj = query_obj.with_where({
                 "path": ["source"],
                 "operator": "Equal",

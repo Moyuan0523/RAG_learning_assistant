@@ -1,4 +1,4 @@
-# Goal : 紀錄歷史問答紀錄，每一次回答紀錄如下
+# Goal : Record chat history
 # {
 #     "role": "user" / "assistant",
 #     "content": "內容文字",
@@ -11,10 +11,9 @@ import datetime
 
 class CustomMemory:
     def __init__(self):
-        self.chat_history = [] # 紀錄所有對話
-        #print("CustomMemory 已建立")
+        self.chat_history = [] 
+        #print("CustomMemory created")
     
-    # 加入 User 的回答
     def add_user_message(self, content):
         self.chat_history.append({
             "role" : "user",
@@ -22,7 +21,6 @@ class CustomMemory:
             "timestamp" : datetime.datetime.now().isoformat()
         })
 
-    # 加入 AI 的回答
     def add_ai_message(self, content, sources = None):
         msg_id = str(uuid.uuid4())
         self.chat_history.append({
@@ -32,7 +30,7 @@ class CustomMemory:
             "sources" : sources,
             "timestamp" : datetime.datetime.now().isoformat()
         })
-        return msg_id # 回傳這次回答的索引
+        return msg_id # uuid
     
     def get_history(self, limit = None):
         return self.chat_history[-limit:] if limit else self.chat_history

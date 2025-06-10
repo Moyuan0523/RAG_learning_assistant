@@ -12,8 +12,8 @@ import uuid
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 app = Flask(__name__)
-app.config["memory"] = CustomMemory() # Flask context-safe，確保每次讀同樣的 memory (Flask 可能開啟多執行序，因debug = true)
-print("Flask 啟動中，DEBUG =", app.debug)
+app.config["memory"] = CustomMemory() # Flask context-safe，ensure ro read same memory
+print("Flask running，DEBUG =", app.debug)
 
 UPLOAD_FOLDER = "Sources"
 ALLOWED_EXTENSIONS = {"pdf"} 
@@ -32,7 +32,7 @@ def reset_memory():
     current_app.config["memory"] = CustomMemory()
     return jsonify({"status": "cleared"})
 
-# fetch User 發過來的 json
+# fetch json for user_interface
 @app.route("/chat", methods=["POST"])
 def chat():
     memory = current_app.config["memory"]
@@ -41,10 +41,10 @@ def chat():
     query = data.get("query", "")
     memory.add_user_message(query)
 
-    source_filter = data.get("source_filter") or None # 未選(None)、空字串皆視為 None(全選)
+    source_filter = data.get("source_filter") or None 
     print("收到的 source_filter：", source_filter)
 
-    # print("現在的記憶內容：")
+    # print("Content of memory：")
     # for m in memory.get_history():
     #     print(f"{m['role']}: {m['content']}")
 
@@ -86,7 +86,7 @@ def upload_pdf():
         except Exception as e:
             print("上傳失敗", e)
 
-        #print("回傳 JSON：", {"status": "success", "filename": filename, "source": filename})
+        #print("JSON：", {"status": "success", "filename": filename, "source": filename})
         return jsonify({
             "status" : "success",
             "filename" : filename
@@ -98,11 +98,11 @@ def upload_pdf():
 def get_sources():
     try:
         weaviate_client = connect_weaviate()
-        all_sources = set() # set 去重複
+        all_sources = set() # automatically remove duplicate one
         page_size = 2000
         offset = 0
 
-        while True: # 每次查 500 筆，直至沒有
+        while True: # check 2000 pages at a time
             result = weaviate_client.query.get("Paragraph", ["source"]) \
                 .with_additional("id") \
                 .with_limit(page_size) \
@@ -115,9 +115,9 @@ def get_sources():
 
             for item in data:
                 if "source" in item:
-                    all_sources.add(item["source"]) # 把每個 chunk 來源加入，set 自動去重複
+                    all_sources.add(item["source"]) # set, removing duplicate ones
 
-            offset += page_size # 往後 500 頁尋找
+            offset += page_size # record position rn
 
         return jsonify([{"source": s} for s in sorted(all_sources)])
 

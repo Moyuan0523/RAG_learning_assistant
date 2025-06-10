@@ -14,11 +14,11 @@ def pdf_to_weaviate(pdf_filename:str, upload_folder = "Sources"):
     source_name = pdf_filename.replace(".pdf", "")
 
 
-    # 讀取資料並切割為 chunks
+    # read and split to chunks
     text = load_pdf(pdf_path)
     chunks = split_text(text)
 
-    # 建立 Weaviate schema 
+    # Create Weaviate schema 
     class_obj = {
         "class": "Paragraph",
         "description": "Chunks from uploaded PDFs",
@@ -33,9 +33,9 @@ def pdf_to_weaviate(pdf_filename:str, upload_folder = "Sources"):
         weaviate_client = connect_weaviate()
         if "Paragraph" not in [c['class'] for c in weaviate_client.schema.get()["classes"]]:
             weaviate_client.schema.create_class(class_obj)
-            print("已新建立 Paragraph schema")
+            print("Created Paragraph schema")
 
-        # 上傳 chunks and embedding    
+        # Upload chunks and embedding    
         for i, chunk in enumerate(chunks):
             embedding = get_embedding(chunk)
             weaviate_client.data_object.create(
@@ -44,16 +44,16 @@ def pdf_to_weaviate(pdf_filename:str, upload_folder = "Sources"):
                     "source": source_name
                 },
                 class_name = "Paragraph",
-                uuid = str(uuid.uuid4()), # 為 chunk 加入唯一識別碼
+                uuid = str(uuid.uuid4()), # for memory to identify
                 vector = embedding
             )
-            if i % 10 == 0:
-                print(f"已上傳 {i} 段")
+            if i % 500 == 0:
+                print(f"Uploaded {i} 段")
 
-        print(f"上傳完成，共 {len(chunks)} 段。已建立 Weaviate 向量索引！")
+        print(f"done! {len(chunks)} chunks stored into weaviate DB on remote server")
 
     except Exception as e:
-        print("發生錯誤:\n", e)
+        print("Error :\n", e)
 
     finally:
-        print("關閉連線")
+        print("disconnect with weaviate")
