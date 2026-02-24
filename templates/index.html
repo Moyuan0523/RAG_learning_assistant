@@ -62,7 +62,7 @@
           <label for="source-filter" class="form-label">Sources：</label>
           <div class="dropdown">
             <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" data-bs-toggle="dropdown">
-              選擇資料來源
+              全部來源（已全選）
             </button>
             <div class="dropdown-menu w-100 p-2" style="max-height: 180px; overflow-y: auto;">
               <div id="source-checkboxes" class="d-flex flex-column gap-1">
@@ -204,6 +204,7 @@
           checkbox.type = "checkbox";
           checkbox.value = item.source;
           checkbox.className = "form-check-input me-2";
+          checkbox.checked = true;  // 預設全選所有來源
 
           const label = document.createElement("label");
           label.className = "form-check-label";

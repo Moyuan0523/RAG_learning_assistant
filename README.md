@@ -1,17 +1,29 @@
 # RAG_learning_assistant
-RAG Learning Assistant is a Retrieval-Augmented Generation (RAG) based system that integrates the Weaviate vector database and OpenAI API through a Flask web application, enabling document-based knowledge retrieval and natural language question answering from user-uploaded documents.
+RAG Learning Assistant is a Retrieval-Augmented Generation (RAG) based system that integrates the Weaviate vector database and **OpenAI API or Local LLM (Llama 3.2)** through a Flask web application, enabling document-based knowledge retrieval and natural language question answering from user-uploaded documents.
 ![Architecture](templates/architecture1.png)
 
+## ✨ New: Local LLM Support
+Now supports deploying **Llama 3.2** locally on your own server! No need to rely on OpenAI API anymore.  
+Choose between:
+- **OpenAI API** (GPT-3.5/GPT-4) - Easy to use, high quality
+- **Local Llama 3.2** (1B/3B) - Privacy-focused, cost-effective, full control
+
+📚 **Quick Start Guides:**
+- [🚀 5-Minute Quick Start](QUICKSTART.md) - Get Llama 3.2 running fast
+- [📖 Complete Deployment Guide](LLAMA_DEPLOYMENT.md) - Detailed instructions for all deployment options
+
 ## Features
-1. Custom Sources  
+1. **Custom Sources**  
 Users can upload their own materials in PDF format.The system will automatically segment, vectorize, and index the content into the knowledge base for downstream question answering.  
-2. Intelligent Chat with Memory  
+2. **Intelligent Chat with Memory**  
 The system features a conversaction memory mechanism. AI considers previous questions and answers to provide more coherent and context-aware responses.  
-3. Answering Questions on Trusted Sources  
+3. **Answering Questions on Trusted Sources**  
 AI responses are primarily generated from the content of user-uploaded documents.
 Each answer includes clearly marked citations to improve verifiability and trustworthiness.  
-4. Source Selection and Control  
+4. **Source Selection and Control**  
 Users can choose specific sources from uploaded materials to be used for answering, helping to avoid interference from irrelevant documents.  
+5. **Flexible LLM Backend** 🆕  
+Switch between OpenAI API and self-hosted Llama 3.2 with a simple configuration change.
 
 Instead of generating answers purely from a language model, this project uses a Retrieval-Augmented Generation (RAG) approach to improve control and transparency.
 Users can trace the source of each response, reducing hallucination and ensuring relevance to the uploaded content.

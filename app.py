@@ -2,12 +2,25 @@
 from flask import Flask, render_template, request, jsonify, current_app
 from werkzeug.utils import secure_filename
 from app.retriever import search_similar_chunks
-from app.generator import generate_answer
 from app.gen_chunks_Index_to_weaviate import connect_weaviate, pdf_to_weaviate
 #from langchain.memory import ConversationBufferMemory
 from app.selfmake_memory import CustomMemory 
 import pickle, os
 import uuid
+from dotenv import load_dotenv
+
+# 載入環境變數
+load_dotenv()
+
+# 根據環境變數決定使用哪個 generator
+USE_LOCAL_LLM = os.getenv("USE_LOCAL_LLM", "false").lower() == "true"
+
+if USE_LOCAL_LLM:
+    from app.generator_local import generate_answer
+    print("🚀 使用本地 LLM（Llama 3.2）")
+else:
+    from app.generator import generate_answer
+    print("🚀 使用 OpenAI API")
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -50,7 +63,9 @@ def chat():
 
     retrieved_chunks = search_similar_chunks(query=query, top_k=10, source_filter=source_filter) # 引用段落
     top_chunks = [chunk["text"] for chunk in retrieved_chunks]
-    answer = generate_answer(query, top_chunks, history=memory.get_history())
+    
+    # 使用智能 Memory：傳入當前問題，獲取相關歷史對話
+    answer = generate_answer(query, top_chunks, history=memory.get_history(current_query=query))
     memory.add_ai_message(answer, sources=retrieved_chunks)
 
     return jsonify({
