@@ -16,7 +16,8 @@ def pdf_to_weaviate(pdf_filename:str, upload_folder = "Sources"):
 
     # read and split to chunks
     text = load_pdf(pdf_path)
-    chunks = split_text(text)
+    # 使用優化的 chunk 參數（chunk_size=1000, chunk_overlap=200）
+    chunks = split_text(text, chunk_size=1000, chunk_overlap=200)
 
     # Create Weaviate schema 
     class_obj = {

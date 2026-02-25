@@ -9,7 +9,8 @@ from sentence_transformers import SentenceTransformer
 from typing import List
 
 # model for embedding, local, free
-embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+# 使用多語言模型以支持繁體中文
+embedding_model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
 
 def connect_weaviate():
     # read enviornment variable
@@ -34,7 +35,8 @@ def load_pdf(file_path: str) -> str:
     return pdf_content
 
 # Spilt pdf_text to overlaping chunks
-def split_text(text: str, chunk_size: int = 500, chunk_overlap: int = 50) -> List[str]: # 初始化數值，也可後續overwrite
+# 針對中文優化：更大的 chunk_size 保留完整語義，更高的 overlap 增加上下文連續性
+def split_text(text: str, chunk_size: int = 1000, chunk_overlap: int = 200) -> List[str]: # 初始化數值，也可後續overwrite
     spliter = RecursiveCharacterTextSplitter(
         chunk_size = chunk_size,
         chunk_overlap = chunk_overlap

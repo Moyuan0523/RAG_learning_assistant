@@ -8,3 +8,6 @@ chunks/
 app/.DS_Store
 building_note/
 .env
+datasets/
+testing/
+evaluate/evaluation_reports

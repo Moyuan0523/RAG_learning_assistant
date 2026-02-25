@@ -59,7 +59,66 @@ then Access the interface
 Click **Upload** on the wed interface to upload PDFs. The system wil automatically chunk, index and mark their source into Weaviate.
 ### Step 5. Select sources
 Select single or multiple source for answering on web interface (Default using all source when selecting nothing.)
-### Step 6.
+### Step 6. Ask questions
 Asking questions in the chat, AI retrieves and answers based on selected sources.
-Click “Expand Reference” to view the supporting content and assess answer accuracy.
+Click "Expand Reference" to view the supporting content and assess answer accuracy.
+
+---
+
+## 🆕 LLM-as-a-Judge: Automated QA Dataset Generation
+
+Generate high-quality test datasets for your RAG system using **adversarial dual-LLM architecture**!
+
+### 🎯 What is LLM-as-a-Judge?
+
+A sophisticated system that uses two independent LLMs to generate and validate question-answer pairs:
+- **Generator (Qwen 2.5)**: Creates QA pairs from document chunks
+- **Evaluator (Llama 3.2)**: Strictly validates quality (PASS/REJECT)
+- **Automatic Retry**: Regenerates rejected pairs for maximum quality
+
+### 🚀 Quick Start
+
+```bash
+# 1. Test remote Ollama connection
+python testing/test_remote_ollama.py
+
+# 2. Generate 50 golden QA pairs
+python generate_golden_dataset.py \
+    --input chunks/data_mining.pkl \
+    --output datasets/golden_qa.json \
+    --count 50
+
+# 3. Or use the interactive menu
+./start.sh
+```
+
+### 📊 Server Configuration
+
+```
+Server:      140.116.96.66:11434
+Generator:   qwen2.5:7b-instruct-q4_K_M (4.68 GB)
+Evaluator:   llama3.2:3b (2.02 GB)
+Status:      ✅ All tests passed
+```
+
+### 📚 Documentation
+
+- **[Complete Guide](building_note/LLM_AS_JUDGE.md)** - Full documentation
+- **[Config Summary](CONFIG_SUMMARY.md)** - Quick reference
+- **[Server Alignment](building_note/SERVER_CONFIG_ALIGNMENT.md)** - Configuration details
+
+### 🎁 Benefits
+
+- ✅ **100% Private**: All processing on your server
+- ✅ **Zero Cost**: Only electricity (no API fees)
+- ✅ **High Quality**: Dual-LLM validation reduces hallucinations
+- ✅ **Scalable**: Generate thousands of QA pairs automatically
+
+**Perfect for:**
+- Testing different chunking strategies
+- Evaluating RAG system performance
+- Creating training datasets for fine-tuning
+- Benchmarking retrieval algorithms
+
+---
 
