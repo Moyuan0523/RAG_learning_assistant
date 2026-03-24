@@ -65,46 +65,98 @@ Click "Expand Reference" to view the supporting content and assess answer accura
 
 ---
 
-## 🛠️ Development Guide
+## 🛠️ CI/CD & Development Guide
 
-This project uses **pre-commit hooks** and **GitHub Actions CI** to enforce code quality.
+This project enforces code quality through a **two-layer** automated pipeline:
 
-### Setup (for developers)
+1. **Pre-commit hooks** — Local checks that run automatically before every `git commit`
+2. **GitHub Actions CI** — Remote checks that run on every `push` to `main` and on pull requests
+
+### 🔧 Tools
+
+| Tool | Role | Description |
+|------|------|-------------|
+| [**Ruff**](https://docs.astral.sh/ruff/) | Linter & Formatter | All-in-one Python linter + formatter + import sorter. Extremely fast (written in Rust). |
+| [**detect-secrets**](https://github.com/Yelp/detect-secrets) | Security | Scans for API keys, passwords, and tokens to prevent accidental credential leaks. |
+| [**pre-commit**](https://pre-commit.com/) | Hook Manager | Manages and orchestrates all git pre-commit hooks. |
+
+### 🚀 Setup (for new developers)
+
 ```bash
-# Install dev tools
+# 1. Install dev tools
 pip install pre-commit ruff detect-secrets
 
-# Install git hooks (run once after cloning)
+# 2. Install git hooks (run once after cloning)
 pre-commit install
 ```
 
-### What gets checked on every commit
-| Hook | Description |
-|------|-------------|
-| **Ruff lint** | Python linting (pycodestyle, pyflakes, import sorting, security) |
-| **Ruff format** | Consistent code formatting |
-| **detect-secrets** | Prevents accidental commit of API keys / secrets |
-| **Trailing whitespace** | Removes trailing spaces |
-| **End-of-file fixer** | Ensures files end with newline |
-| **YAML / JSON check** | Validates config file syntax |
+After this, every `git commit` will automatically run all checks. **Non-compliant code will be blocked from committing.**
 
-### Manual checks
+### ✅ What gets checked
+
+#### Pre-commit Hooks (local, on every commit)
+
+| Hook | Auto-fix | Description |
+|------|----------|-------------|
+| **Ruff lint** | ✅ | Python linting — pycodestyle (E/W), pyflakes (F), import sorting (I), pyupgrade (UP), security (S) |
+| **Ruff format** | ✅ | Consistent code formatting (line-length: 120, double quotes) |
+| **detect-secrets** | ❌ | Blocks commits containing potential API keys or secrets |
+| **trailing-whitespace** | ✅ | Removes trailing spaces from lines |
+| **end-of-file-fixer** | ✅ | Ensures files end with a single newline |
+| **check-yaml** | ❌ | Validates YAML file syntax |
+| **check-json** | ❌ | Validates JSON file syntax |
+| **check-added-large-files** | ❌ | Blocks files larger than 1MB from being committed |
+
+> Hooks marked with ✅ auto-fix will automatically correct your files. If a hook modifies files, the commit is aborted — simply `git add` the fixed files and commit again.
+
+#### GitHub Actions CI (remote, on push & PR)
+
+The workflow (`.github/workflows/lint.yml`) runs the same checks on GitHub's servers:
+
+```yaml
+Trigger:  push to main, pull_request to main
+Runner:   ubuntu-latest, Python 3.10
+Checks:   ruff check → ruff format --check → detect-secrets scan
+```
+
+Pull requests will show ✅ or ❌ status based on CI results.
+
+### 📋 Configuration Files
+
+| File | Purpose |
+|------|---------|
+| `pyproject.toml` | Ruff configuration (rules, line-length, excluded directories, target Python version) |
+| `.pre-commit-config.yaml` | Pre-commit hook definitions and versions |
+| `.secrets.baseline` | detect-secrets baseline (known false positives whitelist) |
+| `.github/workflows/lint.yml` | GitHub Actions CI workflow |
+
+### 🔨 Manual Commands
+
 ```bash
-# Run all hooks on all files
+# Run all hooks on all files (same as what runs on commit)
 pre-commit run --all-files
 
-# Run only linting
+# Lint check only
 ruff check .
 
 # Auto-fix lint issues
 ruff check --fix .
 
-# Format code
+# Format all Python files
 ruff format .
+
+# Check formatting without modifying files
+ruff format --check .
+
+# Scan for secrets
+detect-secrets scan
 ```
 
-### CI/CD
-GitHub Actions automatically runs the same checks on every push to `main` and on pull requests. See `.github/workflows/lint.yml`.
+### 💡 Tips
+
+- **IDE Integration**: Install the [Ruff VS Code extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff) for real-time linting and format-on-save.
+- **Skipping hooks** (emergency only): `git commit --no-verify` — CI will still catch issues on push.
+- **Updating hooks**: `pre-commit autoupdate` to update hook versions.
 
 ---
 
