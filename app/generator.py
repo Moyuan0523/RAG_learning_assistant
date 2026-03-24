@@ -1,9 +1,11 @@
-from openai import OpenAI
-from dotenv import load_dotenv
 import os
+
+from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 # Merge prompt and send to GPT (User's question + relative chunks)
 def build_prompt(query: str, contexts: list[str]) -> str:
@@ -17,6 +19,8 @@ def build_prompt(query: str, contexts: list[str]) -> str:
 
 {query}
 """
+
+
 # Context：
 # 段落1內容
 # ---
@@ -32,6 +36,7 @@ def build_prompt(query: str, contexts: list[str]) -> str:
 
 # 回答：
 
+
 def convert_history_to_openai_format(history):
     messages = []
     for msg in history:
@@ -41,23 +46,22 @@ def convert_history_to_openai_format(history):
             messages.append({"role": "assistant", "content": msg["content"]})
     return messages
 
-def generate_answer(query: str, contexts: list[str], history: list = [], model = "gpt-3.5-turbo") -> str:
-    messages = [
-        {"role" : "system", "content" : "你是個嚴謹的學習助理，請根據提供的資料與對話內容作答。嚴禁編造。"}
-    ]
+
+def generate_answer(query: str, contexts: list[str], history: list = [], model="gpt-3.5-turbo") -> str:
+    messages = [{"role": "system", "content": "你是個嚴謹的學習助理，請根據提供的資料與對話內容作答。嚴禁編造。"}]
 
     # add history
     messages += convert_history_to_openai_format(history)
     # get prompt
     prompt = build_prompt(query, contexts)
     # add this prompt to memory for future
-    messages.append({"role" : "user", "content" : prompt})
+    messages.append({"role": "user", "content": prompt})
 
     # OpenAI, GPT 3.5 turbo
     response = client.chat.completions.create(
-        model = model,
-        messages = messages,
-        temperature = 0.3, # Responing creativity
-        max_tokens=1024
+        model=model,
+        messages=messages,
+        temperature=0.3,  # Responing creativity
+        max_tokens=1024,
     )
     return response.choices[0].message.content.strip()

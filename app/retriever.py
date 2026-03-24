@@ -1,29 +1,29 @@
 import os
+
 import fitz  # PyMuPDF
-import faiss
-import numpy as np
-import weaviate 
+import weaviate
 from dotenv import load_dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
-from typing import List
 
 # model for embedding, local, free
 # 使用多語言模型以支持繁體中文
-embedding_model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+embedding_model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+
 
 def connect_weaviate():
     # read enviornment variable
     load_dotenv()
     server_ip = os.getenv("SERVER_IP")
 
-    # Connect Weaviate v3 DB on remote server 
+    # Connect Weaviate v3 DB on remote server
     weaviate_client = weaviate.Client("http://" + server_ip + ":8080")
     if weaviate_client.is_ready():
         print("Connected to Weaviate")
     else:
         print("Failed to connect to Weaviate")
     return weaviate_client
+
 
 # read PDF，get str for whole text
 def load_pdf(file_path: str) -> str:
@@ -34,19 +34,21 @@ def load_pdf(file_path: str) -> str:
     doc.close()
     return pdf_content
 
+
 # Spilt pdf_text to overlaping chunks
 # 針對中文優化：更大的 chunk_size 保留完整語義，更高的 overlap 增加上下文連續性
-def split_text(text: str, chunk_size: int = 1000, chunk_overlap: int = 200) -> List[str]: # 初始化數值，也可後續overwrite
-    spliter = RecursiveCharacterTextSplitter(
-        chunk_size = chunk_size,
-        chunk_overlap = chunk_overlap
-    )
+def split_text(
+    text: str, chunk_size: int = 1000, chunk_overlap: int = 200
+) -> list[str]:  # 初始化數值，也可後續overwrite
+    spliter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     chunks = spliter.split_text(text)
     return chunks
 
-def get_embedding(text: str) -> List[float]:
-    #  HuggingFace 
+
+def get_embedding(text: str) -> list[float]:
+    #  HuggingFace
     return embedding_model.encode(text).tolist()
+
 
 # # 將 chunks 轉為向量後存入 FAISS 向量資料庫
 # def build_faiss_index(chunks: List[str]):
@@ -62,44 +64,28 @@ def get_embedding(text: str) -> List[float]:
 #     index.add(np.array(embeddings).astype("float32")) # 存入資料庫
 #     return index, embeddings
 
+
 # get the most similar chunks
-def search_similar_chunks(query: str, top_k: int = 3, source_filter: str = None) -> List[str]:
+def search_similar_chunks(query: str, top_k: int = 3, source_filter: str = None) -> list[str]:
     weaviate_client = connect_weaviate()
-    query_vector = get_embedding(query) # query to vector
-    
-    # Get the near vector from class Paragraph 
-    query_obj = weaviate_client.query.get("Paragraph", ["text", "source"]) \
-        .with_near_vector({"vector" : query_vector}) \
+    query_vector = get_embedding(query)  # query to vector
+
+    # Get the near vector from class Paragraph
+    query_obj = (
+        weaviate_client.query.get("Paragraph", ["text", "source"])
+        .with_near_vector({"vector": query_vector})
         .with_limit(top_k)
-    
+    )
+
     if source_filter:
         if isinstance(source_filter, list):
             # Multiple source, "OR" operator (store in List)
-            or_conditions = [
-                {
-                    "path": ["source"],
-                    "operator": "Equal",
-                    "valueText": src
-                } for src in source_filter
-            ]
-            query_obj = query_obj.with_where({
-                "operator": "Or",
-                "operands": or_conditions
-        })
+            or_conditions = [{"path": ["source"], "operator": "Equal", "valueText": src} for src in source_filter]
+            query_obj = query_obj.with_where({"operator": "Or", "operands": or_conditions})
         elif isinstance(source_filter, str):
             # Single source
-            query_obj = query_obj.with_where({
-                "path": ["source"],
-                "operator": "Equal",
-                "valueText": source_filter
-            })
-    
+            query_obj = query_obj.with_where({"path": ["source"], "operator": "Equal", "valueText": source_filter})
+
     results = query_obj.do()
-    
-    return[
-        {
-            "text" : item["text"],
-            "source" : item.get("source", "N/A")
-        }
-        for item in results["data"]["Get"]["Paragraph"]
-    ]
+
+    return [{"text": item["text"], "source": item.get("source", "N/A")} for item in results["data"]["Get"]["Paragraph"]]

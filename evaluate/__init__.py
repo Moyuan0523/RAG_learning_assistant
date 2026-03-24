@@ -21,9 +21,9 @@ __all__ = [
 ]
 
 try:
-    from .qa_generator import QAGenerator
-    from .qa_evaluator import QAEvaluator
     from .llm_as_judge import LLMAsJudgePipeline
+    from .qa_evaluator import QAEvaluator
+    from .qa_generator import QAGenerator
     from .rag_evaluator import RAGEvaluator
 except ImportError:
     # 如果模块尚未完全设置，允许部分导入失败

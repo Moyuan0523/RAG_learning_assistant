@@ -3,7 +3,7 @@ RAG Learning Assistant is a Retrieval-Augmented Generation (RAG) based system th
 ![Architecture](templates/architecture1.png)
 
 ## ✨ New: Local LLM Support
-Now supports deploying **Llama 3.2** locally on your own server! No need to rely on OpenAI API anymore.  
+Now supports deploying **Llama 3.2** locally on your own server! No need to rely on OpenAI API anymore.
 Choose between:
 - **OpenAI API** (GPT-3.5/GPT-4) - Easy to use, high quality
 - **Local Llama 3.2** (1B/3B) - Privacy-focused, cost-effective, full control
@@ -13,16 +13,16 @@ Choose between:
 - [📖 Complete Deployment Guide](LLAMA_DEPLOYMENT.md) - Detailed instructions for all deployment options
 
 ## Features
-1. **Custom Sources**  
-Users can upload their own materials in PDF format.The system will automatically segment, vectorize, and index the content into the knowledge base for downstream question answering.  
-2. **Intelligent Chat with Memory**  
-The system features a conversaction memory mechanism. AI considers previous questions and answers to provide more coherent and context-aware responses.  
-3. **Answering Questions on Trusted Sources**  
+1. **Custom Sources**
+Users can upload their own materials in PDF format.The system will automatically segment, vectorize, and index the content into the knowledge base for downstream question answering.
+2. **Intelligent Chat with Memory**
+The system features a conversaction memory mechanism. AI considers previous questions and answers to provide more coherent and context-aware responses.
+3. **Answering Questions on Trusted Sources**
 AI responses are primarily generated from the content of user-uploaded documents.
-Each answer includes clearly marked citations to improve verifiability and trustworthiness.  
-4. **Source Selection and Control**  
-Users can choose specific sources from uploaded materials to be used for answering, helping to avoid interference from irrelevant documents.  
-5. **Flexible LLM Backend** 🆕  
+Each answer includes clearly marked citations to improve verifiability and trustworthiness.
+4. **Source Selection and Control**
+Users can choose specific sources from uploaded materials to be used for answering, helping to avoid interference from irrelevant documents.
+5. **Flexible LLM Backend** 🆕
 Switch between OpenAI API and self-hosted Llama 3.2 with a simple configuration change.
 
 Instead of generating answers purely from a language model, this project uses a Retrieval-Augmented Generation (RAG) approach to improve control and transparency.
@@ -41,14 +41,14 @@ conda env create -f environment.yml
 ```
 
 ## Runnung the Application
-### Step 1. set up the enviornment 
+### Step 1. set up the enviornment
 Create a `.env` file in `app/`，and add the text of following：
 ```
 OPENAI_API_KEY = Your_API_key
 SERVER_IP = Your_Server_Address:Database_Port
 ```
 ### Step 2. Start the weaviate vector database (via Docker)
-Set up Weaviate v3 on your remote server using Docker 
+Set up Weaviate v3 on your remote server using Docker
 ### Step 3. Run the Flask web application
 ```bash
 python app.py
@@ -62,6 +62,49 @@ Select single or multiple source for answering on web interface (Default using a
 ### Step 6. Ask questions
 Asking questions in the chat, AI retrieves and answers based on selected sources.
 Click "Expand Reference" to view the supporting content and assess answer accuracy.
+
+---
+
+## 🛠️ Development Guide
+
+This project uses **pre-commit hooks** and **GitHub Actions CI** to enforce code quality.
+
+### Setup (for developers)
+```bash
+# Install dev tools
+pip install pre-commit ruff detect-secrets
+
+# Install git hooks (run once after cloning)
+pre-commit install
+```
+
+### What gets checked on every commit
+| Hook | Description |
+|------|-------------|
+| **Ruff lint** | Python linting (pycodestyle, pyflakes, import sorting, security) |
+| **Ruff format** | Consistent code formatting |
+| **detect-secrets** | Prevents accidental commit of API keys / secrets |
+| **Trailing whitespace** | Removes trailing spaces |
+| **End-of-file fixer** | Ensures files end with newline |
+| **YAML / JSON check** | Validates config file syntax |
+
+### Manual checks
+```bash
+# Run all hooks on all files
+pre-commit run --all-files
+
+# Run only linting
+ruff check .
+
+# Auto-fix lint issues
+ruff check --fix .
+
+# Format code
+ruff format .
+```
+
+### CI/CD
+GitHub Actions automatically runs the same checks on every push to `main` and on pull requests. See `.github/workflows/lint.yml`.
 
 ---
 
@@ -121,4 +164,3 @@ Status:      ✅ All tests passed
 - Benchmarking retrieval algorithms
 
 ---
-

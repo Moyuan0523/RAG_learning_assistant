@@ -147,7 +147,7 @@ do
                     --output datasets/golden_weaviate_200_qa_${timestamp}.json \
                     --count 200 \
                     > logs/generation_weaviate_${timestamp}.log 2>&1 &
-                
+
                 echo ""
                 echo "✓ 已在背景啟動！"
                 echo ""
@@ -164,12 +164,12 @@ do
             echo ""
             echo "📈 RAG 系統性能評估"
             echo ""
-            
+
             # 檢查是否有 Golden Dataset
             if [ -d "datasets" ] && [ "$(ls -A datasets/*.json 2>/dev/null | grep -v '\.jsonl$')" ]; then
                 echo "📂 可用的 Golden Datasets："
                 echo ""
-                
+
                 # 列出所有 .json 文件（排除 .jsonl）並編號
                 json_files=(datasets/*.json)
                 i=1
@@ -180,11 +180,11 @@ do
                     echo "  [$i] $file ($size)"
                     ((i++))
                 done
-                
+
                 echo ""
                 echo "請選擇："
                 read -p "  輸入編號 [1-$((i-1))] 或完整路徑: " dataset_choice
-                
+
                 # 判斷用戶輸入的是編號還是路徑
                 if [[ "$dataset_choice" =~ ^[0-9]+$ ]] && [ "$dataset_choice" -ge 1 ] && [ "$dataset_choice" -lt "$i" ]; then
                     # 用戶輸入編號
@@ -193,7 +193,7 @@ do
                     # 用戶輸入路徑
                     dataset_path="$dataset_choice"
                 fi
-                
+
                 # 驗證文件是否存在
                 if [ ! -f "$dataset_path" ]; then
                     echo ""
@@ -201,15 +201,15 @@ do
                     echo ""
                     break
                 fi
-                
+
                 echo ""
                 echo "✓ 已選擇：$dataset_path"
                 read -p "限制測試數量？(留空=全部測試): " limit
-                
+
                 echo ""
                 echo "🚀 開始評估..."
                 mkdir -p evaluation_reports
-                
+
                 if [ -z "$limit" ]; then
                     python evaluate/evaluate_rag.py \
                         --golden-dataset "$dataset_path" \
@@ -250,7 +250,7 @@ do
             echo ""
             break
             ;;
-        *) 
+        *)
             echo "❌ 無效選項 $REPLY"
             ;;
     esac

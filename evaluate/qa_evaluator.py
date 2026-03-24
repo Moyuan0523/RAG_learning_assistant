@@ -4,27 +4,22 @@ QA Evaluator Module
 負責「審查/裁判」的角色
 """
 
-from openai import OpenAI
 import json
 import os
-from typing import Dict, Optional, Literal
+
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 
 
 class QAEvaluator:
     """問答評估器 - 負責嚴格審查 QA 對的品質"""
-    
-    def __init__(
-        self, 
-        base_url: str = None,
-        model: str = None,
-        api_key: str = "ollama"
-    ):
+
+    def __init__(self, base_url: str = None, model: str = None, api_key: str = "ollama"):
         """
         初始化 QA Evaluator
-        
+
         Args:
             base_url: Ollama API 端點（None 則從環境變數讀取）
             model: 使用的模型名稱（None 則從環境變數讀取）
@@ -35,34 +30,34 @@ class QAEvaluator:
             base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         if model is None:
             model = os.getenv("EVALUATOR_MODEL", "llama3.2:3b")
-        
+
         # 確保 base_url 包含 /v1 路徑
-        if not base_url.endswith('/v1'):
-            base_url = base_url.rstrip('/') + '/v1'
-        
+        if not base_url.endswith("/v1"):
+            base_url = base_url.rstrip("/") + "/v1"
+
         self.client = OpenAI(base_url=base_url, api_key=api_key)
         self.model = model
         self.base_url = base_url
-        print(f"✓ QA Evaluator 初始化完成")
+        print("✓ QA Evaluator 初始化完成")
         print(f"  模型: {model}")
         print(f"  端點: {base_url}")
-    
+
     def evaluate_qa_pair(
         self,
         chunk: str,
         question: str,
         ground_truth: str,
-        temperature: float = 0.2  # 評估時需要更嚴謹，溫度較低
-    ) -> Dict[str, any]:
+        temperature: float = 0.2,  # 評估時需要更嚴謹，溫度較低
+    ) -> dict[str, any]:
         """
         評估一組問答對是否符合標準
-        
+
         Args:
             chunk: 原始文檔片段
             question: 生成的問題
             ground_truth: 生成的標準答案
             temperature: 生成溫度（0.2 更嚴謹）
-            
+
         Returns:
             {
                 "verdict": "PASS" | "REJECT",
@@ -74,7 +69,7 @@ class QAEvaluator:
                 }
             }
         """
-        
+
         system_prompt = """你是一個嚴格的 QA 審查員（Quality Assurance Judge），專門評估問答對的品質。
 
 你的職責：
@@ -125,26 +120,23 @@ class QAEvaluator:
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
+                messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
                 temperature=temperature,
-                max_tokens=500
+                max_tokens=500,
             )
-            
+
             # 解析 LLM 輸出
             raw_output = response.choices[0].message.content.strip()
-            
+
             # 嘗試從 markdown code block 中提取 JSON
             if "```json" in raw_output:
                 raw_output = raw_output.split("```json")[1].split("```")[0].strip()
             elif "```" in raw_output:
                 raw_output = raw_output.split("```")[1].split("```")[0].strip()
-            
+
             # 解析 JSON
             evaluation = json.loads(raw_output)
-            
+
             # 驗證必要欄位
             required_fields = ["verdict", "reason", "scores"]
             if not all(field in evaluation for field in required_fields):
@@ -152,125 +144,105 @@ class QAEvaluator:
                 return {
                     "verdict": "REJECT",
                     "reason": "評估器輸出格式錯誤",
-                    "scores": {
-                        "answer_grounded": False,
-                        "question_clear": False,
-                        "answer_precise": False
-                    }
+                    "scores": {"answer_grounded": False, "question_clear": False, "answer_precise": False},
                 }
-            
+
             # 標準化 verdict（確保是大寫）
             evaluation["verdict"] = evaluation["verdict"].upper()
-            
+
             return evaluation
-            
+
         except json.JSONDecodeError as e:
             print(f"⚠️  JSON 解析失敗: {e}")
             print(f"   原始輸出: {raw_output[:200]}...")
             return {
                 "verdict": "REJECT",
                 "reason": "評估器輸出無法解析",
-                "scores": {
-                    "answer_grounded": False,
-                    "question_clear": False,
-                    "answer_precise": False
-                }
+                "scores": {"answer_grounded": False, "question_clear": False, "answer_precise": False},
             }
         except Exception as e:
             print(f"⚠️  評估失敗: {e}")
             return {
                 "verdict": "REJECT",
                 "reason": f"評估過程出錯: {str(e)}",
-                "scores": {
-                    "answer_grounded": False,
-                    "question_clear": False,
-                    "answer_precise": False
-                }
+                "scores": {"answer_grounded": False, "question_clear": False, "answer_precise": False},
             }
-    
-    def batch_evaluate(
-        self, 
-        qa_pairs: list[Dict[str, str]]
-    ) -> tuple[list[Dict], list[Dict]]:
+
+    def batch_evaluate(self, qa_pairs: list[dict[str, str]]) -> tuple[list[dict], list[dict]]:
         """
         批量評估多組問答對
-        
+
         Args:
             qa_pairs: 問答對列表，每個包含 {chunk, question, ground_truth}
-            
+
         Returns:
             (passed_pairs, rejected_pairs)
             兩個列表，每個元素都包含原始 QA + 評估結果
         """
         passed = []
         rejected = []
-        
+
         total = len(qa_pairs)
-        print(f"\n⚖️  開始評估問答對...")
+        print("\n⚖️  開始評估問答對...")
         print(f"   總數: {total}")
-        
+
         for i, qa in enumerate(qa_pairs):
-            print(f"\n📋 [{i+1}/{total}] 評估中...")
-            
+            print(f"\n📋 [{i + 1}/{total}] 評估中...")
+
             evaluation = self.evaluate_qa_pair(
-                chunk=qa["chunk"],
-                question=qa["question"],
-                ground_truth=qa["ground_truth"]
+                chunk=qa["chunk"], question=qa["question"], ground_truth=qa["ground_truth"]
             )
-            
+
             # 組合結果
             result = {
                 **qa,  # 原始 QA 對
-                "evaluation": evaluation
+                "evaluation": evaluation,
             }
-            
+
             if evaluation["verdict"] == "PASS":
                 passed.append(result)
-                print(f"   ✓ PASS")
+                print("   ✓ PASS")
             else:
                 rejected.append(result)
                 print(f"   ✗ REJECT - {evaluation['reason']}")
-        
+
         pass_rate = len(passed) / total * 100 if total > 0 else 0
-        print(f"\n✓ 評估完成！")
+        print("\n✓ 評估完成！")
         print(f"   通過: {len(passed)}/{total} ({pass_rate:.1f}%)")
         print(f"   拒絕: {len(rejected)}/{total}")
-        
+
         return passed, rejected
 
 
 if __name__ == "__main__":
     # 測試程式碼
-    evaluator = QAEvaluator(
-        base_url="http://localhost:11434/v1",
-        model="llama3.1:8b-instruct"
-    )
-    
+    evaluator = QAEvaluator(base_url="http://localhost:11434/v1", model="llama3.1:8b-instruct")
+
     # 測試案例 1：好的問答對
     test_chunk = """
     機器學習是人工智慧的一個分支，它使電腦系統能夠從數據中學習並改進，
     而無需明確編程。監督式學習是機器學習中最常見的類型。
     """
-    
+
     test_question = "什麼是機器學習？"
     test_ground_truth = "機器學習是人工智慧的一個分支，它使電腦系統能夠從數據中學習並改進，而無需明確編程。"
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     print("測試案例 1：好的問答對")
-    print("="*60)
-    
+    print("=" * 60)
+
     result = evaluator.evaluate_qa_pair(test_chunk, test_question, test_ground_truth)
     print(f"\n判決: {result['verdict']}")
     print(f"理由: {result['reason']}")
     print(f"詳細評分: {result['scores']}")
-    
+
     # 測試案例 2：不好的問答對（有幻覺）
     bad_ground_truth = "機器學習是由 Alan Turing 在 1950 年發明的技術。"
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     print("測試案例 2：包含幻覺的答案")
-    print("="*60)
-    
+    print("=" * 60)
+
     result2 = evaluator.evaluate_qa_pair(test_chunk, test_question, bad_ground_truth)
     print(f"\n判決: {result2['verdict']}")
     print(f"理由: {result2['reason']}")
